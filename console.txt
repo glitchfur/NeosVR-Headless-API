@@ -1,0 +1,132 @@
+Example console output from a headless client session:
+
+Initializing Neos: Beta 2021.2.21.1425
+CPU: UNKNOWN, Processor Count: 12
+Max GC Generation: 1, IsLittleEndian: True
+System Memory: -1.00 B
+GPU: UNKNOWN, VRAM: -1.00 B, POT Byte Aligned: True
+HeadDevice: Headless
+6.12.0 (makepkg/a22ed3f094e Tue Dec 22 06:01:50 PM -03 2020)
+Supported Texture Formats: Unknown, Alpha8, RGB24, ARGB32, RGBA32, BGRA32, RGBAHalf, ARGBHalf, RGBAFloat, ARGBFloat, BC1, BC2, BC3, BC4, BC5, BC6H, BC7, ETC2_RGB, ETC2_RGBA1, ETC2_RGBA8, ASTC_4x4, ASTC_5x5, ASTC_6x6, ASTC_8x8, ASTC_10x10, ASTC_12x12
+Available locales: cs, de, en, en-gb, eo, es, et, fi, fr, is, ja, ko, nl, no, pl, ru, sv, tr, zh-cn, zh-tw
+Argument: /home/neos/.steam/steamapps/common/NeosVR/Neos.exe
+Computing compatibility hash...
+Compatibility Hash: Ss/Fph2uelk2Ni5in2EjJw==
+Initializing FrooxEngine...
+	Initializing Libraries
+Configuring System.Net.ServicePointManager
+Calling Coder<T>
+Performing a dummy texture decode
+FreeImage Version: 3.18.0
+FreeType Version: 2.10.4
+	Gathering all types
+Assembly: mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+Assembly: Neos, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+Assembly: FrooxEngine, Version=2021.2.21.1425, Culture=neutral, PublicKeyToken=null
+Assembly: System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+Assembly: CodeX, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+Assembly: CommandLine, Version=2.8.0.0, Culture=neutral, PublicKeyToken=5a870481e358d379
+Assembly: Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed
+Assembly: CloudX.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+Assembly: BaseX, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+Assembly: System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+Assembly: CommandX, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+Assembly: BEPU_Implementer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+Assembly: BusinessX, Version=2021.2.21.1425, Culture=neutral, PublicKeyToken=null
+Assembly: System.Management, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+Assembly: System.Numerics, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+Assembly: System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+Assembly: System.Runtime.Serialization, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+Assembly: System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+Assembly: System.Xml, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+Assembly: System.Text.Json, Version=5.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51
+Assembly: System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51
+Assembly: PostX, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+Assembly: System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+Assembly: Octokit, Version=0.48.0.0, Culture=neutral, PublicKeyToken=null
+Assembly: LiteNetLib, Version=1.0.7461.9154, Culture=neutral, PublicKeyToken=null
+Assembly: LiteDB, Version=4.1.5.0, Culture=neutral, PublicKeyToken=4ee40123013c9f27
+Assembly: SharpFont, Version=4.0.1.200, Culture=neutral, PublicKeyToken=48add4c483071cdf
+Assembly: System.Runtime, Version=4.1.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+Assembly: netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51
+Assembly: System.Collections, Version=4.0.11.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+Assembly: System.Runtime.InteropServices, Version=4.1.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+Assembly: Ben.Demystifier, Version=0.1.0.0, Culture=neutral, PublicKeyToken=a6d206e05440431a
+Assembly: FreeImageNET, Version=3.15.1.0, Culture=neutral, PublicKeyToken=null
+	Initializing connector fields for core classes
+		Initializing connector for FrooxEngine.AudioSystem
+		Initializing connector for FrooxEngine.AssetManager
+No connectors for: FrooxEngine.AssetManager
+		Initializing connector for FrooxEngine.Slot
+No connectors for: FrooxEngine.Slot
+		Initializing connector for FrooxEngine.PhysicsManager
+		Initializing connector for FrooxEngine.RenderManager
+No connectors for: FrooxEngine.RenderManager
+		Initializing connector for FrooxEngine.World
+No connectors for: FrooxEngine.World
+		Initializing connector for FrooxEngine.WorldManager
+No connectors for: FrooxEngine.WorldManager
+	Initializing asset classes
+	Initializing workers
+Extracting Connectors
+Extracting Workers
+Initializing non-generic workers
+Initializing LogiX
+Initialized Logix in 00:00:00.0241434, workers: 4158, LogixNodes: 3019, overloads: 148
+Initializing InputInterface...
+Initializing LocalDB...
+	Reading settings file
+	Performing version checks and updates, loaded version: 7
+MachineID: 2mi3568nlu69kayfnxrifq
+	Loading LiteDB database
+	Configuring LiteDB database
+Saving Settings
+Initializing JobProcessor...
+Initializing AssetManager...
+Initializing NetworkManager...
+Initializing AudioSystem...
+Initializing GlobalCoroutineManager...
+Initializing WorldManager...
+Initializing CloudX Interface...
+Initializing SecurityManager...
+Initializing RecordManager...
+Initializing PlatformInterface...
+	Steam
+[S_API] SteamAPI_Init(): SteamAPI_IsSteamRunning() did not locate a running instance of Steam.
+[S_API] SteamAPI_Init(): Loaded '/home/neos/.local/share/Steam/linux64/steamclient.so' OK.
+[S_API FAIL] SteamAPI_Init() failed; create pipe failed.SteamAPI failed to initialize
+
+   at void BaseX.UniLog.Error(string message, bool stackTrace)
+   at async Task<bool> FrooxEngine.SteamConnector.Initialize(PlatformInterface platformInterface)
+   at void System.Runtime.CompilerServices.AsyncTaskMethodBuilder<bool>.Start<<Initialize>d__20>(ref <Initialize>d__20 stateMachine) in /build/mono/src/mono/mcs/class/referencesource/mscorlib/system/runtime/compilerservices/AsyncMethodBuilder.cs:line 459
+   at Task<bool> FrooxEngine.SteamConnector.Initialize(PlatformInterface platformInterface)
+   at async Task FrooxEngine.PlatformInterface.Initialize(Engine engine)
+   at void System.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start<<Initialize>d__12>(ref <Initialize>d__12 stateMachine) in /build/mono/src/mono/mcs/class/referencesource/mscorlib/system/runtime/compilerservices/AsyncMethodBuilder.cs:line 304
+   at Task FrooxEngine.PlatformInterface.Initialize(Engine engine)
+   at async Task FrooxEngine.Engine.Initialize(string appPath, string dataPath, string cachePath, ISystemInfo systemInfo, IInternalResource resources, bool verboseInit)
+   at void System.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start<<Initialize>d__283>(ref <Initialize>d__283 stateMachine) in /build/mono/src/mono/mcs/class/referencesource/mscorlib/system/runtime/compilerservices/AsyncMethodBuilder.cs:line 304
+   at Task FrooxEngine.Engine.Initialize(string appPath, string dataPath, string cachePath, ISystemInfo systemInfo, IInternalResource resources, bool verboseInit)
+   at void NeosHeadless.Program.Main(string[] args)
+Initializing WorldAnnouncer...
+Initializing NetworkManager...
+Supported network protocols: lnl-nat, lnl
+FrooxEngine Initialized in 1476.7532 ms
+FrooxEngine Initialization Finished
+Starting Userspace world
+Starting running world: 
+Userspace world started, attaching Userspace component
+Userspace on Attach, running setup
+Processing commandline arguments
+Running default bootstrap
+User GlitchFur Role: , HasFingerTracking: False, HasEyeTracking: False, HasLipTracking: False
+Has LeftTool: True, Has RightTool: True
+Setting URL: local://2mi3568nlu69kayfnxrifq/p9JbA69k_0WI02VdVWGK-Q.lz4bson
+User Joined Userspace. Username: GlitchFur, UserID: , MachineID: 2mi3568nlu69kayfnxrifq
+User Spawn Userspace. Username: GlitchFur, UserID: , MachineID: 2mi3568nlu69kayfnxrifq
+Starting world with preset: SpaceWorld
+NetworkInitStart
+Starting running world: 
+User Joined Glitch Test Session. Username: GlitchFur, UserID: , MachineID: 2mi3568nlu69kayfnxrifq
+User Spawn Glitch Test Session. Username: GlitchFur, UserID: , MachineID: 2mi3568nlu69kayfnxrifq
+World running...
+Glitch Test Session>
