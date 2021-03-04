@@ -1,86 +1,181 @@
-# NOTE: List of valid access levels for worlds:
+# NeosVR-Headless-API
+# Glitch, 2021
+
+# NOTES/GOTCHAS:
+
+# 1. World names can contain newline (\n) characters, and the headless client
+# will actually print these and break the line. This can mess up the output of
+# any commands that include a world's name, and it even messes up the prompt
+# itself. This will need to be carefully handled in the event that it happens.
+# 2. On a few occasions I've witnessed the headless client spit out a line or
+# two of errors immediately after running a completely unrelated command. It
+# seemed like they were world-related, non-fatal errors that were waiting to be
+# printed until a command was run. This can make the output of commands
+# inconsistent. Very strict parsing rules will have to be put in place to ensure
+# that we read only what we want, and nothing that we don't.
+# 3. Running commands in very quick succession can make the headless client
+# behave as if it's in non-interactive log mode. Particularly, repeatedly
+# sending the "users" command and joining a world will print out detailed user
+# join information that otherwise would not have been printed, but would show up
+# normally if the client was properly put into log mode with the `log` command.
+# While it's rare that this could occur, a fix for the previous issue would
+# probably fix this one too.
+# 4. Closing the Userspace world will lock up the headless client and the
+# command will never return. The high-level functions in this API need to raise
+# an exception when this is attempted to prevent this from happening.
+
+# MISCELLANEOUS NOTES:
+
+# List of valid access levels for worlds:
 # Private, LAN, Friends, FriendsOfFriends, RegisteredUsers, Anyone
 
-# TODO: Test if really long session name breaks the format of `worlds`.
-# TODO: Look into Python's `isatty` stuff.
-# TODO: Don't allow closing Userspace world. This halts the client.
-# TODO: Figure out how to reliably detect prompt. It doesn't always update when
-# it is supposed to, like when changing worlds. Seems like a race condition.
-# TODO: Test Unicode names, somehow.
-# TODO: Add optional timeout for wait()
+# TODOS:
+
+# Test if really long session name breaks the format of `worlds`.
+# Don't allow closing Userspace world. This halts the client.
+# Add optional timeout for wait()
+# Thread safeness
+# Add ability to load config from other location.
 
 # TESTING REQUIRED: If there are critical errors and a prompt never comes back,
 # Python will hang while waiting to read it. I don't know if this is a situation
 # that could occur though. Probably depends on the world.
 
 from threading import Thread, Event
+from queue import Queue, Empty
 from subprocess import Popen, PIPE
 
-class HeadlessClient:
-    def __init__(self, neos_dir):
+class HeadlessProcess:
+    """
+    Handles direct control of the NeosVR headless client. This class is not
+    intended to be used directly. `HeadlessClient` should be used instead.
+    """
+    def __init__(self, neos_dir, config=None):
         self.neos_dir = neos_dir
+        self.process = Popen(["mono", "Neos.exe"],
+            stdin=PIPE,
+            stdout=PIPE,
+            stderr=PIPE,
+            bufsize=0, # Unbuffered
+            cwd=self.neos_dir
+        )
+        self.running = True
+
+        self._stdin_queue = Queue()
+        self._stdout_queue = Queue()
+        self._stderr_queue = Queue()
+
+        self._threads = [
+            Thread(target=self._stdin_writer),
+            Thread(target=self._stdout_reader),
+            Thread(target=self._stderr_reader)
+        ]
+
+        for thread in self._threads:
+            thread.daemon = True
+            thread.start()
+
+    def write(self, data):
+        """Write `data` to the process's stdin."""
+        self._stdin_queue.put(data)
+
+    def readline(self):
+        """Read a line from the process's stdout."""
+        res = self._stdout_queue.get()
+        self._stdout_queue.task_done()
+        return res
+
+    def _stdin_writer(self):
+        while True:
+            try:
+                cmd = self._stdin_queue.get(timeout=.5)
+            except Empty:
+                if self.running:
+                    continue
+                else:
+                    break
+            self.process.stdin.write(cmd.encode("utf8"))
+            self._stdin_queue.task_done()
+
+    def _stdout_reader(self):
+        line_buffer = ""
+        while True:
+            data = self.process.stdout.read(4096).decode("utf8")
+            if data == "":
+                # Stream has ended, trigger shutdown of other threads.
+                self.running = False
+                break
+            lines = (line_buffer + data).split("\n")
+            line_buffer = ""
+
+            if lines[-1] == "":
+                lines.pop()
+            elif not lines[-1].endswith(">"):
+                line_buffer = lines.pop()
+
+            for ln in lines:
+                self._stdout_queue.put(ln)
+
+    def _stderr_reader(self):
+        line_buffer = ""
+        while True:
+            data = self.process.stderr.read(4096).decode("utf8")
+            if data == "":
+                break
+            lines = (line_buffer + data).split("\n")
+            line_buffer = ""
+
+            if lines[-1] == "":
+                lines.pop()
+            else:
+                line_buffer = lines.pop()
+
+            for ln in lines:
+                self._stderr_queue.put(ln)
+
+class HeadlessClient:
+    """
+    High-level API to the NeosVR headless client. Functions exist for most
+    commands and the output will be parsed and returned as Python objects.
+    """
+    def __init__(self, neos_dir, config=None):
+        self.neos_dir = neos_dir
+        self.process = HeadlessProcess(self.neos_dir, config=config)
         self.ready = Event()
 
-        def run():
-            self.process = Popen(["mono", "Neos.exe"],
-                stdin=PIPE,
-                stdout=PIPE,
-                stderr=PIPE, # TODO: Is anything useful printed to `stderr`?
-                text=True,
-                bufsize=1,
-                encoding="UTF-8",
-                cwd=self.neos_dir
-            )
-            self.focused_world = None
-
-            for ln in self.process.stdout:
-                if ln.startswith("User Joined"):
-                    self.focused_world = ln[12:ln.index(". Username")]
-                # TODO: Make this support multiple worlds.
-                elif ln == "World running...\n":
+        def init():
+            """Parse startup output and determine when it's ready."""
+            # `almost_ready` is set to True when at least one world is
+            # running. Only then do we look for the ">" character in the
+            # prompt, to prevent false positives.
+            almost_ready = False
+            while True:
+                ln = self.process.readline()
+                if ln.endswith(">") and almost_ready:
+                    self.ready.set()
                     break
+                elif ln == "World running...":
+                    almost_ready = True
 
-            self.ready.set()
-
-            # Skip the prompt
-            self._read_until_prompt()
-
-        self.thread = Thread(target=run)
-        self.thread.daemon = True # TODO: Implement clean shutdown
-        self.thread.start()
-
-    def _read_until_prompt(self):
-        output, ln = [], []
-        while True:
-            # TODO: Figure out if there is a cleaner way of reading `stdout`
-            # than reading one byte at a time. However, I don't think there is a
-            # better cross-platform way of doing it because of the way Python
-            # blocks on read() if there is no more output to be read. So this is
-            # the only way we can read output without running over the edge.
-            # TODO: This may not be thread-safe.
-            c = self.process.stdout.read(1)
-            if c == "\n":
-                output.append("".join(ln))
-                ln = []
-            elif c == ">":
-                s = "".join(ln)
-                if s == "Glitch Test Session": # TODO: Remove hardcoded value
-                    break
-                else:
-                    ln.append(c)
-            else:
-                ln.append(c)
-        return output
-
-    def _send_command(self, cmd):
-        """Sends a command to the console, returns the output."""
-        # TODO: This may not be thread-safe.
-        self.process.stdin.write("%s\n" % cmd)
-        return self._read_until_prompt()
+        init_thread = Thread(target=init)
+        init_thread.start()
 
     def wait(self):
-        """Blocks until the headless client is ready to receive input."""
+        """Block until the process becomes ready."""
         return self.ready.wait()
+
+    def send_command(self, cmd):
+        """Sends a command to the console, returns the output."""
+        # TODO: Probably still not thread-safe.
+        # TODO: Raise an exception if client is not ready yet.
+        self.process.write("%s\n" % cmd)
+        res = []
+        while True:
+            ln = self.process.readline()
+            if ln.endswith(">"):
+                break
+            res.append(ln)
+        return res
 
     # BEGIN HEADLESS CLIENT COMMANDS
 
@@ -90,7 +185,7 @@ class HeadlessClient:
 
     def message(self, friend_name, message):
         """Message user in friends list"""
-        cmd = self._send_command("message %s \"%s\"" % (friend_name, message))
+        cmd = self.send_command("message %s \"%s\"" % (friend_name, message))
         if cmd[0] == "Message sent!":
             return {"success": True, "message": cmd[0]}
         else:
@@ -98,7 +193,7 @@ class HeadlessClient:
 
     def invite(self, friend_name):
         """Invite a friend to the currently focused world"""
-        cmd = self._send_command("invite %s" % friend_name)
+        cmd = self.send_command("invite %s" % friend_name)
         if cmd[0] == "Invite sent!":
             return {"success": True, "message": cmd[0]}
         else:
@@ -109,7 +204,7 @@ class HeadlessClient:
 
     def worlds(self):
         """Lists all active worlds"""
-        cmd = self._send_command("worlds")
+        cmd = self.send_command("worlds")
         worlds = []
         for ln in cmd:
             world = {}
@@ -128,7 +223,7 @@ class HeadlessClient:
 
     def status(self):
         """Shows the status of the current world"""
-        cmd = self._send_command("status")
+        cmd = self.send_command("status")
         cmd_dict = {}
         for ln in cmd:
             ln = ln.split(": ", 1)
@@ -147,18 +242,19 @@ class HeadlessClient:
         status["mobile_friendly"] = \
             True if cmd_dict["Mobile Friendly"] == "True" else False
         status["description"] = cmd_dict["Description"]
+        # TODO: Empty list if no tags
         status["tags"] = cmd_dict["Tags"].split(", ")
         status["users"] = cmd_dict["Users"].split(", ")
         return status
 
     def session_url(self):
         """Prints the URL of the current session"""
-        cmd = self._send_command("sessionurl")
+        cmd = self.send_command("sessionurl")
         return cmd[0]
 
     def session_id(self):
         """Prints the ID of the current session"""
-        cmd = self._send_command("sessionid")
+        cmd = self.send_command("sessionid")
         return cmd[0]
 
     # `copySessionURL` is not supported.
@@ -166,7 +262,7 @@ class HeadlessClient:
 
     def users(self):
         """Lists all users in the world"""
-        cmd = self._send_command("users")
+        cmd = self.send_command("users")
         users = []
         for ln in cmd:
             ln = ln.split("\t")
@@ -185,7 +281,7 @@ class HeadlessClient:
 
     def kick(self, username):
         """Kicks given user from the session"""
-        cmd = self._send_command("kick %s" % username)
+        cmd = self.send_command("kick %s" % username)
         for ln in cmd:
             if ln.endswith("kicked!"):
                 return {"success": True, "message": ln}
@@ -194,7 +290,7 @@ class HeadlessClient:
 
     def silence(self, username):
         """Silences given user in the session"""
-        cmd = self._send_command("silence %s" % username)
+        cmd = self.send_command("silence %s" % username)
         for ln in cmd:
             if ln.endswith("silenced!"):
                 return {"success": True, "message": ln}
@@ -203,7 +299,7 @@ class HeadlessClient:
 
     def unsilence(self, username):
         """Removes silence from given user in the session"""
-        cmd = self._send_command("unsilence %s" % username)
+        cmd = self.send_command("unsilence %s" % username)
         for ln in cmd:
             if ln.endswith("unsilenced!"):
                 return {"success": True, "message": ln}
@@ -235,12 +331,11 @@ class HeadlessClient:
     def shutdown(self):
         """Shuts down the headless client"""
         # TODO: Do a SIGTERM if the client doesn't close in a reasonable time.
-        self.process.stdin.write("shutdown\n")
-        # Empty buffers
-        # TODO: Read them to a file? Make asyncronous?
-        self.process.stdout.read()
-        self.process.stderr.read()
-        return self.process.wait()
+        self.process._stdin_queue.put("shutdown\n")
+        # TODO: Do something with `stdout` and `stderr` from this point forward.
+        # TODO: Make asynchronous?
+        # Below is not a typo.
+        return self.process.process.wait()
 
     # TODO: Implement `tickRate` here
 
