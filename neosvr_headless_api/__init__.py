@@ -36,6 +36,8 @@
 # Add optional timeout for wait()
 # Thread safeness
 # Add ability to load config from other location.
+# When running commands, funnel unexpected output somewhere to be reviewed
+# later as they may be errors.
 
 # TESTING REQUIRED: If there are critical errors and a prompt never comes back,
 # Python will hang while waiting to read it. I don't know if this is a situation
@@ -44,6 +46,10 @@
 from threading import Thread, Event
 from queue import Queue, Empty
 from subprocess import Popen, PIPE
+
+from parse import parse, findall
+
+from .response_formats import *
 
 class HeadlessProcess:
     """
@@ -208,16 +214,14 @@ class HeadlessClient:
 
     def worlds(self):
         """Lists all active worlds"""
+        # TODO: This will ignore unexpected output as desired, but there is not
+        # an option to direct this unexpected output anywhere with `findall()`.
         cmd = self.send_command("worlds")
+        cmd = "\n".join(cmd)
         worlds = []
-        for ln in cmd:
-            world = {}
-            world["name"] = ln[4:36].rstrip()
-            ln = ln[36:].split("\t")
-            world["users"] = int(ln[0].split()[1])
-            world["present"] = int(ln[1].split()[1])
-            world["access_level"] = ln[2].split()[1]
-            world["max_users"] = int(ln[3].split()[1])
+        for world in findall(WORLD_FORMAT, cmd):
+            world = world.named
+            world["name"] = world["name"].rstrip()
             worlds.append(world)
         return worlds
 
@@ -227,28 +231,54 @@ class HeadlessClient:
 
     def status(self):
         """Shows the status of the current world"""
+        # Beware, this function does some funky stuff. It is to catch world
+        # names with newlines, and ignore lines that shouldn't be there.
+        # TODO: Capture unexpected output.
         cmd = self.send_command("status")
-        cmd_dict = {}
-        for ln in cmd:
-            ln = ln.split(": ", 1)
-            cmd_dict[ln[0]] = ln[1]
-        # Some remapping and type conversion
+
+        format_status_mapping = [
+            (STATUS_CURRENT_USERS_FORMAT, "current_users"),
+            (STATUS_PRESENT_USERS_FORMAT, "present_users"),
+            (STATUS_MAX_USERS_FORMAT, "max_users"),
+            (STATUS_UPTIME_FORMAT, "uptime"),
+            (STATUS_ACCESS_LEVEL_FORMAT, "access_level"),
+            (STATUS_HIDDEN_FROM_LISTING_FORMAT, "hidden_from_listing"),
+            (STATUS_MOBILE_FRIENDLY_FORMAT, "mobile_friendly"),
+            (STATUS_USERS_FORMAT, "users")
+        ]
+
         status = {}
-        status["name"] = cmd_dict["Name"]
-        status["session_id"] = cmd_dict["SessionID"]
-        status["current_users"] = int(cmd_dict["Current Users"])
-        status["present_users"] = int(cmd_dict["Present Users"])
-        status["max_users"] = int(cmd_dict["Max Users"])
-        status["uptime"] = cmd_dict["Uptime"]
-        status["access_level"] = cmd_dict["Access Level"]
+        status["name"] = parse(STATUS_NAME_FORMAT, "\n".join(cmd))[0]
+        for ln in cmd:
+            if ln.startswith("SessionID"):
+                session_id = ln.split(": ")[1]
+                if session_id == "":
+                    session_id = None
+                status["session_id"] = session_id
+                continue
+            for i, j in format_status_mapping:
+                fmt = parse(i, ln)
+                if fmt:
+                    status[j] = fmt[0]
+                    break
+            if ln.startswith("Description"):
+                description = ln.split(": ")[1]
+                if description == "":
+                    description = None
+                status["description"] = description
+                continue
+            if ln.startswith("Tags"):
+                tags = ln.split(": ")[1]
+                if tags == "":
+                    tags = []
+                status["tags"] = tags
+                continue
         status["hidden_from_listing"] = \
-            True if cmd_dict["Hidden from listing"] == "True" else False
+            True if status["hidden_from_listing"] == "True" else False
         status["mobile_friendly"] = \
-            True if cmd_dict["Mobile Friendly"] == "True" else False
-        status["description"] = cmd_dict["Description"]
-        # TODO: Empty list if no tags
-        status["tags"] = cmd_dict["Tags"].split(", ")
-        status["users"] = cmd_dict["Users"].split(", ")
+            True if status["mobile_friendly"] == "True" else False
+        status["users"] = status["users"].split(", ")
+
         return status
 
     def session_url(self):
@@ -266,16 +296,16 @@ class HeadlessClient:
 
     def users(self):
         """Lists all users in the world"""
+        # TODO: Pipe unexpected output somewhere.
         cmd = self.send_command("users")
         users = []
         for ln in cmd:
-            ln = ln.split("\t")
-            user = {}
-            user["name"] = ln[0]
-            user["role"] = ln[1].split()[1] # TODO: Make Python objects?
-            user["present"] = True if ln[2].split()[1] == "True" else False
-            user["ping"] = int(ln[3].split()[1]) # in milliseconds
-            user["fps"] = float(ln[4].split()[1])
+            user = parse(USER_FORMAT, ln)
+            if user == None: # Invalid output
+                continue
+            user = user.named
+            user["name"] = user["name"].rstrip()
+            user["present"] = True if user["present"] == True else False
             users.append(user)
         return users
 
