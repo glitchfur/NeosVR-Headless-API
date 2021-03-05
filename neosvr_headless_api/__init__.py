@@ -85,6 +85,10 @@ class HeadlessProcess:
         self._stdout_queue.task_done()
         return res
 
+    def wait(self):
+        """Block until the process exits. Alias for `self.process.wait()`"""
+        return self.process.wait()
+
     def _stdin_writer(self):
         while True:
             try:
@@ -331,11 +335,10 @@ class HeadlessClient:
     def shutdown(self):
         """Shuts down the headless client"""
         # TODO: Do a SIGTERM if the client doesn't close in a reasonable time.
-        self.process._stdin_queue.put("shutdown\n")
+        self.process.write("shutdown\n")
         # TODO: Do something with `stdout` and `stderr` from this point forward.
         # TODO: Make asynchronous?
-        # Below is not a typo.
-        return self.process.process.wait()
+        return self.process.wait()
 
     # TODO: Implement `tickRate` here
 
