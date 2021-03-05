@@ -284,12 +284,21 @@ class HeadlessClient:
     def session_url(self):
         """Prints the URL of the current session"""
         cmd = self.send_command("sessionurl")
-        return cmd[0]
+        # URLs begin with "http://cloudx.azurewebsites.net/open/session/"
+        # which is 45 characters. If there is nothing after it, then there is
+        # no session ID, meaning that this is the Userspace world.
+        if cmd[0][45:] == "":
+            return None
+        else:
+            return cmd[0]
 
     def session_id(self):
         """Prints the ID of the current session"""
         cmd = self.send_command("sessionid")
-        return cmd[0]
+        if cmd[0] == "": # Userspace world
+            return None
+        else:
+            return cmd[0]
 
     # `copySessionURL` is not supported.
     # `copySessionID` is not supported.
