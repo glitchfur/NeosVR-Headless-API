@@ -38,6 +38,21 @@ silence
 unsilence
 	Removes silence from given user in the session
 	Usage: unsilence <username>
+name
+	Sets a new world name
+	Usage: name <new name>
+description
+	Sets a new world description
+	Usage: description <new description>
+maxUsers
+	Sets user limit
+	Usage: maxusers <max users>
+awayKickInterval
+	Sets the away kick interval
+	Usage: awaykickinterval <interval in minutes>
+gc
+	Forces full garbage collection
+	Usage: gc 
 shutdown
 	Shuts down the headless client
 	Usage: shutdown 
@@ -102,24 +117,12 @@ respawn
 role
 	Assigns a role to given user
 	Usage: role <username> <role>
-name
-	Sets a new world name
-	Usage: name <new name>
 accessLevel
 	Sets a new world access level
 	Usage: accesslevel <access level name>
 hideFromListing
 	Sets whether the session should be hidden from listing or not
 	Usage: hidefromlisting <true/false>
-description
-	Sets a new world description
-	Usage: description <new description>
-maxUsers
-	Sets user limit
-	Usage: maxusers <max users>
-awayKickInterval
-	Sets the away kick interval
-	Usage: awaykickinterval <interval in minutes>
 import
 	Import an asset into the focused world
 	Usage: import <file path or URL>
@@ -138,9 +141,6 @@ dynamicImpulseFloat
 spawn
 	Spawns a saved item from the inventory into the root
 	Usage: spawn <url> <active state>
-gc
-	Forces full garbage collection
-	Usage: gc 
 tickRate
 	Sets the maximum simulation rate for the servers
 	Usage: tickrate <ticks per second>

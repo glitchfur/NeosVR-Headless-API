@@ -33,6 +33,8 @@
 
 # Test if really long session name breaks the format of `worlds`.
 # Don't allow closing Userspace world. This halts the client.
+# Handle blank world names.
+# Check if no world is currently focused. Could affect all commands.
 # Add optional timeout for wait()
 # Thread safeness
 # Add ability to load config from other location.
@@ -357,19 +359,50 @@ class HeadlessClient:
     # TODO: Implement `unbanByID` here
     # TODO: Implement `respawn` here
     # TODO: Implement `role` here
-    # TODO: Implement `name` here
+
+    def name(self, new_name):
+        """Sets a new world name"""
+        self.send_command("name \"%s\"" % new_name)
+        return {"success": "True"}
+
     # TODO: Implement `accessLevel` here
     # TODO: Implement `hideFromListing` here
-    # TODO: Implement `description` here
-    # TODO: Implement `maxUsers` here
-    # TODO: Implement `awayKickInterval` here
+
+    def description(self, new_description):
+        """Sets a new world description"""
+        self.send_command("description \"%s\"" % new_description)
+        return {"success": "True"}
+
+    def max_users(self, max_users):
+        """Sets user limit"""
+        cmd = self.send_command("maxusers %s" % max_users)
+        if cmd:
+            return {"success": False, "message": cmd[0]}
+        else:
+            return {"success": True}
+
+    def away_kick_interval(self, interval_in_minutes):
+        """Sets the away kick interval"""
+        cmd = self.send_command("awaykickinterval %s" % interval_in_minutes)
+        if cmd:
+            return {"success": False, "message": cmd[0]}
+        else:
+            return {"success": True}
+
     # TODO: Implement `import` here
     # TODO: Implement `dynamicImpulse` here
     # TODO: Implement `dynamicImpulseString` here
     # TODO: Implement `dynamicImpulseInt` here
     # TODO: Implement `dynamicImpulseFloat` here
     # TODO: Implement `spawn` here
-    # TODO: Implement `gc` here
+
+    def gc(self):
+        """Forces full garbage collection"""
+        cmd = self.send_command("gc")
+        if cmd[0] == "GC finished":
+            return {"success": True, "message": cmd[0]}
+        else:
+            return {"success": False, "message": cmd[0]}
 
     def shutdown(self):
         """Shuts down the headless client"""
