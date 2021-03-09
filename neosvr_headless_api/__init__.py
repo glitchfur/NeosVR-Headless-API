@@ -20,9 +20,6 @@
 # normally if the client was properly put into log mode with the `log` command.
 # While it's rare that this could occur, a fix for the previous issue would
 # probably fix this one too.
-# 4. Closing the Userspace world will lock up the headless client and the
-# command will never return. The high-level functions in this API need to raise
-# an exception when this is attempted to prevent this from happening.
 
 # MISCELLANEOUS NOTES:
 
@@ -32,7 +29,6 @@
 # TODOS:
 
 # Test if really long session name breaks the format of `worlds`.
-# Don't allow closing Userspace world. This halts the client.
 # Handle blank world names.
 # Check if no world is currently focused. Could affect all commands.
 # Add optional timeout for wait()
@@ -286,21 +282,12 @@ class HeadlessClient:
     def session_url(self):
         """Prints the URL of the current session"""
         cmd = self.send_command("sessionurl")
-        # URLs begin with "http://cloudx.azurewebsites.net/open/session/"
-        # which is 45 characters. If there is nothing after it, then there is
-        # no session ID, meaning that this is the Userspace world.
-        if cmd[0][45:] == "":
-            return None
-        else:
-            return cmd[0]
+        return cmd[0]
 
     def session_id(self):
         """Prints the ID of the current session"""
         cmd = self.send_command("sessionid")
-        if cmd[0] == "": # Userspace world
-            return None
-        else:
-            return cmd[0]
+        return cmd[0]
 
     # `copySessionURL` is not supported.
     # `copySessionID` is not supported.
