@@ -8,6 +8,12 @@ WON'T BE IMPLEMENTED: Command doesn't make sense to add in this context.
 IMPLEMENTED
 ===========
 
+login
+	Login into a Neos account
+	Usage: login <username/email> <password>
+logout
+	Log out from the current Neos account
+	Usage: logout 
 message
 	Message user in friends list
 	Usage: message <friend name> <message>
@@ -17,6 +23,9 @@ invite
 worlds
 	Lists all active worlds
 	Usage: worlds 
+focus
+	Focus world
+	Usage: focus <world name or number>
 status
 	Shows the status of the current world
 	Usage: status 
@@ -38,6 +47,12 @@ silence
 unsilence
 	Removes silence from given user in the session
 	Usage: unsilence <username>
+respawn
+	Respawns given user
+	Usage: respawn <username>
+role
+	Assigns a role to given user
+	Usage: role <username> <role>
 name
 	Sets a new world name
 	Usage: name <new name>
@@ -56,6 +71,9 @@ gc
 shutdown
 	Shuts down the headless client
 	Usage: shutdown 
+tickRate
+	Sets the maximum simulation rate for the servers
+	Usage: tickrate <ticks per second>
 
 NOT IMPLEMENTED
 ===============
@@ -63,21 +81,12 @@ NOT IMPLEMENTED
 saveConfig
 	Saves the current settings into the original config file
 	Usage: saveconfig <filename> (optional, will save in place without)
-login
-	Login into a Neos account
-	Usage: login <username/email> <password>
-logout
-	Log out from the current Neos account
-	Usage: logout 
 friendRequests
 	Lists all incoming friend requests
 	Usage: friendrequests 
 acceptFriendRequest
 	Accepts a friend request
 	Usage: acceptfriendrequest <friend name>
-focus
-	Focus world
-	Usage: focus <world name or number>
 startWorldURL
 	Start a new world from URL
 	Usage: startworldurl <record URL>
@@ -111,12 +120,6 @@ banByID
 unbanByID
 	Unbans user with given Neos User ID from all sessions hosted by this server
 	Usage: unbanbyid <user ID>
-respawn
-	Respawns given user
-	Usage: respawn <username>
-role
-	Assigns a role to given user
-	Usage: role <username> <role>
 accessLevel
 	Sets a new world access level
 	Usage: accesslevel <access level name>
@@ -141,9 +144,6 @@ dynamicImpulseFloat
 spawn
 	Spawns a saved item from the inventory into the root
 	Usage: spawn <url> <active state>
-tickRate
-	Sets the maximum simulation rate for the servers
-	Usage: tickrate <ticks per second>
 
 WON'T BE IMPLEMENTED
 ====================

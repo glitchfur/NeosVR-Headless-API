@@ -1,5 +1,14 @@
 # Changelog
 
+## 2021-03-11
+* The following commands have been added:
+  * `login`
+  * `logout`
+  * `focus`
+  * `respawn`
+  * `role`
+  * `tickRate`
+
 ## 2021-03-09
 * Added this changelog
 * A bug in the headless client that [allowed closing the Userspace world, causing the client to hang](https://github.com/Neos-Metaverse/NeosPublic/issues/1811) was resolved by removing access to the Userspace world from the headless client console entirely. Checks to make sure that `close`, among other commands, are not executed on the Userspace world are no longer needed. This bug is resolved as of Neos version Beta 2021.3.9.130, so the README has been updated to reflect this.

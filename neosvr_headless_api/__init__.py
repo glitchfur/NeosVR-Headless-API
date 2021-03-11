@@ -23,6 +23,9 @@
 
 # MISCELLANEOUS NOTES:
 
+# List of valid roles for users:
+# Admin, Builder, Moderator, Guest, Spectator
+
 # List of valid access levels for worlds:
 # Private, LAN, Friends, FriendsOfFriends, RegisteredUsers, Anyone
 
@@ -188,8 +191,23 @@ class HeadlessClient:
     # BEGIN HEADLESS CLIENT COMMANDS
 
     # TODO: Implement `saveConfig` here
-    # TODO: Implement `login` here
-    # TODO: Implement `logout` here
+
+    def login(self, username_or_email, password):
+        """Log into a Neos account"""
+        cmd = self.send_command("login \"%s\" \"%s\"" %
+            (username_or_email, password))
+        if cmd[-1] == "Logged in successfully!":
+            return {"success": True, "message": cmd[-1]}
+        else:
+            return {"success": False, "message": cmd[-1]}
+
+    def logout(self):
+        """Log out from the current Neos account"""
+        cmd = self.send_command("logout")
+        if cmd[-1] == "Logged out!":
+            return {"success": True, "message": cmd[-1]}
+        else:
+            return {"success": False, "message": cmd[0]}
 
     def message(self, friend_name, message):
         """Message user in friends list"""
@@ -223,7 +241,22 @@ class HeadlessClient:
             worlds.append(world)
         return worlds
 
-    # TODO: Implement `focus` here
+    def focus(self, world_name_or_number):
+        """Focus world"""
+        try:
+            world_number = int(world_name_or_number)
+            cmd = self.send_command("focus %d" % world_number)
+        except ValueError:
+            cmd = self.send_command("focus \"%s\"" % world_name_or_number)
+        errors = [
+            "World with this name does not exit",
+            "World index out of range"
+        ]
+        if cmd and cmd[0] in errors:
+            return {"success": False, "message": cmd[0]}
+        else:
+            return {"success": True}
+
     # TODO: Implement `startWorldURL` here
     # TODO: Implement `startWorldTemplate` here
 
@@ -344,8 +377,22 @@ class HeadlessClient:
     # TODO: Implement `unbanByName` here
     # TODO: Implement `banByID` here
     # TODO: Implement `unbanByID` here
-    # TODO: Implement `respawn` here
-    # TODO: Implement `role` here
+
+    def respawn(self, username):
+        """Respawns given user"""
+        cmd = self.send_command("respawn \"%s\"" % username)
+        if cmd[-1].endswith("respawned!"):
+            return {"success": True, "message": cmd[-1]}
+        else:
+            return {"success": False, "message": cmd[-1]}
+
+    def role(self, username, role):
+        """Assigns a role to given user"""
+        cmd = self.send_command("role \"%s\" \"%s\"" % (username, role))
+        if "now has role" in cmd[0]:
+            return {"success": True, "message": ln[0]}
+        else:
+            return {"success": False, "message": ln[0]}
 
     def name(self, new_name):
         """Sets a new world name"""
@@ -399,7 +446,13 @@ class HeadlessClient:
         # TODO: Make asynchronous?
         return self.process.wait()
 
-    # TODO: Implement `tickRate` here
+    def tick_rate(self, ticks_per_second):
+        """Sets the maximum simulation rate for the servers"""
+        cmd = self.send_command("tickrate \"%s\"" % ticks_per_second)
+        if cmd[0] == "Tick Rate Set!":
+            return {"success": True, "message": cmd[0]}
+        else:
+            return {"success": False, "message": cmd[0]}
 
     # `log` is not supported.
 
