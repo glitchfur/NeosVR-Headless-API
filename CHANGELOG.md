@@ -4,6 +4,7 @@
 * Commands are now queued so that they are guaranteed to be run in order, and can optionally be executed asynchronously.
   * Execute commands asynchronously by setting the `async_` keyword argument to `True` when calling `send_command()`. At the moment, the higher-level functions do not support asynchronous calls.
   * The keyword argument is named `async_` so that it does not conflict with Python's built-in `async` keyword.
+* Several variables are now set in the `HeadlessClient` class which contain information obtained from the headless client's startup messages, such as `self.version`, `self.compatibility_hash`, and `self.machine_id`.
 
 ## 2021-03-11
 * The following commands have been added:

@@ -7,6 +7,15 @@
 # https://github.com/r1chardj0n3s/parse
 # https://docs.python.org/3/library/string.html#format-string-syntax
 
+# These are for parsing all the startup messages that come BEFORE the prompt.
+NEOS_VERSION_FORMAT = "Initializing Neos: {}"
+SUPPORTED_TEXTURE_FORMATS_FORMAT = "Supported Texture Formats: {}"
+AVAILABLE_LOCALES_FORMAT = "Available locales: {}"
+ARGUMENT_FORMAT = "Argument: {}"
+COMPATIBILITY_HASH_FORMAT = "Compatibility Hash: {}"
+MACHINE_ID_FORMAT = "MachineID: {}"
+SUPPORTED_NETWORK_PROTOCOLS_FORMAT = "Supported network protocols: {}"
+
 WORLD_FORMAT = "[{:d}] {name}Users: {users:d}\tPresent: {present:d}\tAccessLevel: {access_level}\tMaxUsers: {max_users:d}"
 USER_FORMAT = "{name}\tRole: {role}\tPresent: {present}\tPing: {ping:d} ms\tFPS: {fps:f}"
 

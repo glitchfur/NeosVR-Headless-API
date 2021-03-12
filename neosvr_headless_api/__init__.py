@@ -154,14 +154,23 @@ class HeadlessClient:
         self.command_queue = Queue()
         self.ready = Event()
 
+        self.version = None
+        self.supported_texture_formats = None
+        self.available_locales = None
+        self.argument = None
+        self.compatibility_hash = None
+        self.machine_id = None
+        self.supported_network_protocols = None
+
         def init():
-            """Parse startup output and determine when it's ready."""
+            """Parse startup messages and determine when it's ready."""
             # `almost_ready` is set to True when at least one world is
             # running. Only then do we look for the ">" character in the
             # prompt, to prevent false positives.
             almost_ready = False
             while True:
                 ln = self.process.readline()
+                self._check_startup_line(ln)
                 if ln.endswith(">") and almost_ready:
                     self.ready.set()
                     break
@@ -174,6 +183,37 @@ class HeadlessClient:
         self._command_thread = Thread(target=self._command_processor)
         self._command_thread.daemon = True
         self._command_thread.start()
+
+    def _check_startup_line(self, ln):
+        """Extracts info from startup messages."""
+        fmt = parse(NEOS_VERSION_FORMAT, ln)
+        if fmt:
+            self.version = fmt[0]
+            return
+        fmt = parse(SUPPORTED_TEXTURE_FORMATS_FORMAT, ln)
+        if fmt:
+            self.supported_texture_formats = fmt[0].split(", ")
+            return
+        fmt = parse(AVAILABLE_LOCALES_FORMAT, ln)
+        if fmt:
+            self.available_locales = fmt[0].split(", ")
+            return
+        fmt = parse(ARGUMENT_FORMAT, ln)
+        if fmt:
+            self.argument = fmt[0]
+            return
+        fmt = parse(COMPATIBILITY_HASH_FORMAT, ln)
+        if fmt:
+            self.compatibility_hash = fmt[0]
+            return
+        fmt = parse(MACHINE_ID_FORMAT, ln)
+        if fmt:
+            self.machine_id = fmt[0]
+            return
+        fmt = parse(SUPPORTED_NETWORK_PROTOCOLS_FORMAT, ln)
+        if fmt:
+            self.supported_network_protocols = fmt[0].split(", ")
+            return
 
     def _command_processor(self):
         """Executes commands in a separate thread."""
