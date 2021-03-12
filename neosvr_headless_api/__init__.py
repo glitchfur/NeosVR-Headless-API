@@ -31,11 +31,9 @@
 
 # TODOS:
 
-# Test if really long session name breaks the format of `worlds`.
 # Handle blank world names.
 # Check if no world is currently focused. Could affect all commands.
 # Add optional timeout for wait()
-# Thread safeness
 # Add ability to load config from other location.
 # When running commands, funnel unexpected output somewhere to be reviewed
 # later as they may be errors.
@@ -47,6 +45,7 @@
 from threading import Thread, Event
 from queue import Queue, Empty
 from subprocess import Popen, PIPE
+from concurrent import futures
 
 from parse import parse, findall
 
@@ -152,6 +151,7 @@ class HeadlessClient:
     def __init__(self, neos_dir, config=None):
         self.neos_dir = neos_dir
         self.process = HeadlessProcess(self.neos_dir, config=config)
+        self.command_queue = Queue()
         self.ready = Event()
 
         def init():
@@ -171,22 +171,43 @@ class HeadlessClient:
         init_thread = Thread(target=init)
         init_thread.start()
 
+        self._command_thread = Thread(target=self._command_processor)
+        self._command_thread.daemon = True
+        self._command_thread.start()
+
+    def _command_processor(self):
+        """Executes commands in a separate thread."""
+        while True:
+            cmd, fut = self.command_queue.get()
+            self.process.write("%s\n" % cmd)
+            res = []
+            while True:
+                ln = self.process.readline()
+                if ln.endswith(">"):
+                    break
+                res.append(ln)
+            fut.set_result(res)
+            self.command_queue.task_done()
+
     def wait(self):
         """Block until the process becomes ready."""
         return self.ready.wait()
 
-    def send_command(self, cmd):
-        """Sends a command to the console, returns the output."""
-        # TODO: Probably still not thread-safe.
+    def send_command(self, cmd, async_=False):
+        """
+        Sends a command to the console, returns the output. Set `async_`
+        to True to instead get a Future that will hold the eventual output.
+        """
         # TODO: Raise an exception if client is not ready yet.
-        self.process.write("%s\n" % cmd)
-        res = []
-        while True:
-            ln = self.process.readline()
-            if ln.endswith(">"):
-                break
-            res.append(ln)
-        return res
+        # TODO: Python documentation says not to create a Future object
+        # directly but we are doing it here anyway. Might make my own
+        # Future-like object in the future.
+        fut = futures.Future()
+        self.command_queue.put((cmd, fut))
+        if async_:
+            return fut
+        else:
+            return fut.result()
 
     # BEGIN HEADLESS CLIENT COMMANDS
 

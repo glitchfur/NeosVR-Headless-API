@@ -1,5 +1,10 @@
 # Changelog
 
+## 2021-03-12
+* Commands are now queued so that they are guaranteed to be run in order, and can optionally be executed asynchronously.
+  * Execute commands asynchronously by setting the `async_` keyword argument to `True` when calling `send_command()`. At the moment, the higher-level functions do not support asynchronous calls.
+  * The keyword argument is named `async_` so that it does not conflict with Python's built-in `async` keyword.
+
 ## 2021-03-11
 * The following commands have been added:
   * `login`
