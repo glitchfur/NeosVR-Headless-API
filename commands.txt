@@ -47,6 +47,24 @@ silence
 unsilence
 	Removes silence from given user in the session
 	Usage: unsilence <username>
+ban
+	Bans the user from all sessions hosted by this server
+	Usage: ban <username>
+unban
+	Removes ban for user with given username
+	Usage: unban <username>
+banByName
+	Bans user with given Neos username from all sessions hosted by this server
+	Usage: banbyname <Neos username>
+unbanByName
+	Unbans user with given Neos username from all sessions hosted by this server
+	Usage: unbanbyname <Neos username>
+banByID
+	Bans user with given Neos User ID from all sessions hosted by this server
+	Usage: banbyid <user ID>
+unbanByID
+	Unbans user with given Neos User ID from all sessions hosted by this server
+	Usage: unbanbyid <user ID>
 respawn
 	Respawns given user
 	Usage: respawn <username>
@@ -102,24 +120,6 @@ save
 restart
 	Restarts the current world
 	Usage: restart 
-ban
-	Bans the user from all sessions hosted by this server
-	Usage: ban <username>
-unban
-	Removes ban for user with given username
-	Usage: unban <username>
-banByName
-	Bans user with given Neos username from all sessions hosted by this server
-	Usage: banbyname <Neos username>
-unbanByName
-	Unbans user with given Neos username from all sessions hosted by this server
-	Usage: unbanbyname <Neos username>
-banByID
-	Bans user with given Neos User ID from all sessions hosted by this server
-	Usage: banbyid <user ID>
-unbanByID
-	Unbans user with given Neos User ID from all sessions hosted by this server
-	Usage: unbanbyid <user ID>
 accessLevel
 	Sets a new world access level
 	Usage: accesslevel <access level name>

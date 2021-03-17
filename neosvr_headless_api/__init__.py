@@ -37,6 +37,7 @@
 # Add ability to load config from other location.
 # When running commands, funnel unexpected output somewhere to be reviewed
 # later as they may be errors.
+# Ensure all user-provided input is encased in quotes.
 
 # TESTING REQUIRED: If there are critical errors and a prompt never comes back,
 # Python will hang while waiting to read it. I don't know if this is a situation
@@ -432,12 +433,66 @@ class HeadlessClient:
         else:
             return {"success": False, "message": cmd[0]}
 
-    # TODO: Implement `ban` here
-    # TODO: Implement `unban` here
-    # TODO: Implement `banByName` here
-    # TODO: Implement `unbanByName` here
-    # TODO: Implement `banByID` here
-    # TODO: Implement `unbanByID` here
+    def ban(self, username):
+        """Bans the user from all sessions hosted by this server"""
+        cmd = self.send_command("ban %s" % username)
+        for ln in cmd:
+            if ln.endswith("banned!"):
+                return {"success": True, "message": ln}
+        else:
+            return {"success": False, "message": cmd[0]}
+
+    def unban(self, username):
+        """Removes ban for user with given username"""
+        cmd = self.send_command("unban %s" % username)
+        if cmd[0] == "Ban removed!":
+            return {"success": True, "message": cmd[0]}
+        else:
+            return {"success": False, "message": cmd[0]}
+
+    def ban_by_name(self, neos_username):
+        """
+        Bans user with given Neos username from
+        all sessions hosted by this server
+        """
+        cmd = self.send_command("banbyname %s" % neos_username)
+        if cmd[-1] == "User banned":
+            return {"success": True, "message": cmd[-1]}
+        else:
+            return {"success": False, "message": cmd[-1]}
+
+    def unban_by_name(self, neos_username):
+        """
+        Unbans user with given Neos username from
+        all sessions hosted by this server
+        """
+        cmd = self.send_command("unbanbyname %s" % neos_username)
+        if cmd[-1] == "Ban removed":
+            return {"success": True, "message": cmd[-1]}
+        else:
+            return {"success": False, "message": cmd[-1]}
+
+    def ban_by_id(self, user_id):
+        """
+        Bans user with given Neos User ID from
+        all sessions hosted by this server
+        """
+        cmd = self.send_command("banbyid %s" % user_id)
+        if cmd[-1] == "User banned":
+            return {"success": True, "message": cmd[-1]}
+        else:
+            return {"success": False, "message": cmd[-1]}
+
+    def unban_by_id(self, user_id):
+        """
+        Unbans user with given Neos User ID from
+        all sessions hosted by this server
+        """
+        cmd = self.send_command("unbanbyid %s" % user_id)
+        if cmd[-1] == "Ban removed":
+            return {"success": True, "message": cmd[-1]}
+        else:
+            return {"success": False, "message": cmd[-1]}
 
     def respawn(self, username):
         """Respawns given user"""
