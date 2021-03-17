@@ -9,6 +9,7 @@
   * `banByID`
   * `unbanByID`
 * Fixed some boolean values that were strings.
+* Encased all user-provided input in commands with double quotations, so that usernames, world names, etc. containing spaces will work properly.
 
 ## 2021-03-12
 * Commands are now queued so that they are guaranteed to be run in order, and can optionally be executed asynchronously.

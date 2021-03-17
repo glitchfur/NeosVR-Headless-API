@@ -37,7 +37,6 @@
 # Add ability to load config from other location.
 # When running commands, funnel unexpected output somewhere to be reviewed
 # later as they may be errors.
-# Ensure all user-provided input is encased in quotes.
 
 # TESTING REQUIRED: If there are critical errors and a prompt never comes back,
 # Python will hang while waiting to read it. I don't know if this is a situation
@@ -273,7 +272,7 @@ class HeadlessClient:
 
     def message(self, friend_name, message):
         """Message user in friends list"""
-        cmd = self.send_command("message %s \"%s\"" % (friend_name, message))
+        cmd = self.send_command("message \"%s\" \"%s\"" % (friend_name, message))
         if cmd[0] == "Message sent!":
             return {"success": True, "message": cmd[0]}
         else:
@@ -281,7 +280,7 @@ class HeadlessClient:
 
     def invite(self, friend_name):
         """Invite a friend to the currently focused world"""
-        cmd = self.send_command("invite %s" % friend_name)
+        cmd = self.send_command("invite \"%s\"" % friend_name)
         if cmd[0] == "Invite sent!":
             return {"success": True, "message": cmd[0]}
         else:
@@ -408,7 +407,7 @@ class HeadlessClient:
 
     def kick(self, username):
         """Kicks given user from the session"""
-        cmd = self.send_command("kick %s" % username)
+        cmd = self.send_command("kick \"%s\"" % username)
         for ln in cmd:
             if ln.endswith("kicked!"):
                 return {"success": True, "message": ln}
@@ -417,7 +416,7 @@ class HeadlessClient:
 
     def silence(self, username):
         """Silences given user in the session"""
-        cmd = self.send_command("silence %s" % username)
+        cmd = self.send_command("silence \"%s\"" % username)
         for ln in cmd:
             if ln.endswith("silenced!"):
                 return {"success": True, "message": ln}
@@ -426,7 +425,7 @@ class HeadlessClient:
 
     def unsilence(self, username):
         """Removes silence from given user in the session"""
-        cmd = self.send_command("unsilence %s" % username)
+        cmd = self.send_command("unsilence \"%s\"" % username)
         for ln in cmd:
             if ln.endswith("unsilenced!"):
                 return {"success": True, "message": ln}
@@ -435,7 +434,7 @@ class HeadlessClient:
 
     def ban(self, username):
         """Bans the user from all sessions hosted by this server"""
-        cmd = self.send_command("ban %s" % username)
+        cmd = self.send_command("ban \"%s\"" % username)
         for ln in cmd:
             if ln.endswith("banned!"):
                 return {"success": True, "message": ln}
@@ -444,7 +443,7 @@ class HeadlessClient:
 
     def unban(self, username):
         """Removes ban for user with given username"""
-        cmd = self.send_command("unban %s" % username)
+        cmd = self.send_command("unban \"%s\"" % username)
         if cmd[0] == "Ban removed!":
             return {"success": True, "message": cmd[0]}
         else:
@@ -455,7 +454,7 @@ class HeadlessClient:
         Bans user with given Neos username from
         all sessions hosted by this server
         """
-        cmd = self.send_command("banbyname %s" % neos_username)
+        cmd = self.send_command("banbyname \"%s\"" % neos_username)
         if cmd[-1] == "User banned":
             return {"success": True, "message": cmd[-1]}
         else:
@@ -466,7 +465,7 @@ class HeadlessClient:
         Unbans user with given Neos username from
         all sessions hosted by this server
         """
-        cmd = self.send_command("unbanbyname %s" % neos_username)
+        cmd = self.send_command("unbanbyname \"%s\"" % neos_username)
         if cmd[-1] == "Ban removed":
             return {"success": True, "message": cmd[-1]}
         else:
@@ -477,7 +476,7 @@ class HeadlessClient:
         Bans user with given Neos User ID from
         all sessions hosted by this server
         """
-        cmd = self.send_command("banbyid %s" % user_id)
+        cmd = self.send_command("banbyid \"%s\"" % user_id)
         if cmd[-1] == "User banned":
             return {"success": True, "message": cmd[-1]}
         else:
@@ -488,7 +487,7 @@ class HeadlessClient:
         Unbans user with given Neos User ID from
         all sessions hosted by this server
         """
-        cmd = self.send_command("unbanbyid %s" % user_id)
+        cmd = self.send_command("unbanbyid \"%s\"" % user_id)
         if cmd[-1] == "Ban removed":
             return {"success": True, "message": cmd[-1]}
         else:
@@ -525,7 +524,7 @@ class HeadlessClient:
 
     def max_users(self, max_users):
         """Sets user limit"""
-        cmd = self.send_command("maxusers %s" % max_users)
+        cmd = self.send_command("maxusers \"%s\"" % max_users)
         if cmd:
             return {"success": False, "message": cmd[0]}
         else:
@@ -533,7 +532,7 @@ class HeadlessClient:
 
     def away_kick_interval(self, interval_in_minutes):
         """Sets the away kick interval"""
-        cmd = self.send_command("awaykickinterval %s" % interval_in_minutes)
+        cmd = self.send_command("awaykickinterval \"%s\"" % interval_in_minutes)
         if cmd:
             return {"success": False, "message": cmd[0]}
         else:
