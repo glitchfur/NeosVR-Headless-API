@@ -514,8 +514,22 @@ class HeadlessClient:
         self.send_command("name \"%s\"" % new_name)
         return {"success": True}
 
-    # TODO: Implement `accessLevel` here
-    # TODO: Implement `hideFromListing` here
+    def access_level(self, access_level_name):
+        """Sets a new world access level"""
+        cmd = self.send_command("accesslevel \"%s\"" % access_level_name)
+        if "now has access level" in cmd[0]:
+            return {"success": True, "message": cmd[0]}
+        else:
+            return {"success": False, "message": cmd[0]}
+
+    def hide_from_listing(self, true_false):
+        """Sets whether the session should be hidden from listing or not"""
+        cmd = self.send_command("hidefromlisting \"%s\"" %
+            str(true_false).lower())
+        if cmd[0].startswith("World") and cmd[0].endswith("listing"):
+            return {"success": True, "message": cmd[0]}
+        else:
+            return {"success": False, "message": cmd[0]}
 
     def description(self, new_description):
         """Sets a new world description"""

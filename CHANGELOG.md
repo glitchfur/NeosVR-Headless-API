@@ -8,6 +8,8 @@
   * `unbanByName`
   * `banByID`
   * `unbanByID`
+  * `accessLevel`
+  * `hideFromListing`
 * Fixed some boolean values that were strings.
 * Encased all user-provided input in commands with double quotations, so that usernames, world names, etc. containing spaces will work properly.
 

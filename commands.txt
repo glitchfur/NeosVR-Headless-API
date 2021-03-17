@@ -74,6 +74,12 @@ role
 name
 	Sets a new world name
 	Usage: name <new name>
+accessLevel
+	Sets a new world access level
+	Usage: accesslevel <access level name>
+hideFromListing
+	Sets whether the session should be hidden from listing or not
+	Usage: hidefromlisting <true/false>
 description
 	Sets a new world description
 	Usage: description <new description>
@@ -120,12 +126,6 @@ save
 restart
 	Restarts the current world
 	Usage: restart 
-accessLevel
-	Sets a new world access level
-	Usage: accesslevel <access level name>
-hideFromListing
-	Sets whether the session should be hidden from listing or not
-	Usage: hidefromlisting <true/false>
 import
 	Import an asset into the focused world
 	Usage: import <file path or URL>
