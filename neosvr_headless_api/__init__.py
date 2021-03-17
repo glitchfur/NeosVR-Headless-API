@@ -513,7 +513,7 @@ class HeadlessClient:
     def name(self, new_name):
         """Sets a new world name"""
         self.send_command("name \"%s\"" % new_name)
-        return {"success": "True"}
+        return {"success": True}
 
     # TODO: Implement `accessLevel` here
     # TODO: Implement `hideFromListing` here
@@ -521,7 +521,7 @@ class HeadlessClient:
     def description(self, new_description):
         """Sets a new world description"""
         self.send_command("description \"%s\"" % new_description)
-        return {"success": "True"}
+        return {"success": True}
 
     def max_users(self, max_users):
         """Sets user limit"""
