@@ -505,9 +505,9 @@ class HeadlessClient:
         """Assigns a role to given user"""
         cmd = self.send_command("role \"%s\" \"%s\"" % (username, role))
         if "now has role" in cmd[0]:
-            return {"success": True, "message": ln[0]}
+            return {"success": True, "message": cmd[0]}
         else:
-            return {"success": False, "message": ln[0]}
+            return {"success": False, "message": cmd[0]}
 
     def name(self, new_name):
         """Sets a new world name"""

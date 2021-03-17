@@ -12,6 +12,7 @@
   * `hideFromListing`
 * Fixed some boolean values that were strings.
 * Encased all user-provided input in commands with double quotations, so that usernames, world names, etc. containing spaces will work properly.
+* Fixed a bug that caused the `role` function to always throw an exception due to an incorrect variable name.
 
 ## 2021-03-12
 * Commands are now queued so that they are guaranteed to be run in order, and can optionally be executed asynchronously.
