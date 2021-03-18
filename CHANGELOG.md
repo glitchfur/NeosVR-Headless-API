@@ -1,5 +1,8 @@
 # Changelog
 
+## 2021-03-18
+* Added the ability to provide a configuration file in another location using Neos' `--config` parameter.
+
 ## 2021-03-17
 * The following commands have been added:
   * `ban`

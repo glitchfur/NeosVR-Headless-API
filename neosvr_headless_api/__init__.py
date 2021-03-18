@@ -34,7 +34,6 @@
 # Handle blank world names.
 # Check if no world is currently focused. Could affect all commands.
 # Add optional timeout for wait()
-# Add ability to load config from other location.
 # When running commands, funnel unexpected output somewhere to be reviewed
 # later as they may be errors.
 
@@ -46,6 +45,7 @@ from threading import Thread, Event
 from queue import Queue, Empty
 from subprocess import Popen, PIPE
 from concurrent import futures
+from os import path
 
 from parse import parse, findall
 
@@ -58,7 +58,28 @@ class HeadlessProcess:
     """
     def __init__(self, neos_dir, config=None):
         self.neos_dir = neos_dir
-        self.process = Popen(["mono", "Neos.exe"],
+
+        # If no configuration file is specified, then Neos will load it from its
+        # default location at "Config/Config.json" (relative to the directory
+        # Neos is running from). However, if this file does not exist, Neos will
+        # run using all default values without creating a configuration file.
+        # For the former case, `config` is set to the absolute path of this
+        # configuration file. For the latter, `config` is left at `None`.
+        self.args = ["mono", "Neos.exe"]
+        if config:
+            if not path.exists(config):
+                raise FileNotFoundError(
+                    "Configuration file not found: \"%s\"" % config)
+            self.config = config
+            self.args.extend(["--config", config])
+        else:
+            dft_loc = path.join(neos_dir, "Config", "Config.json")
+            if path.exists(dft_loc):
+                self.config = dft_loc
+            else:
+                self.config = None
+
+        self.process = Popen(self.args,
             stdin=PIPE,
             stdout=PIPE,
             stderr=PIPE,
@@ -151,6 +172,10 @@ class HeadlessClient:
     def __init__(self, neos_dir, config=None):
         self.neos_dir = neos_dir
         self.process = HeadlessProcess(self.neos_dir, config=config)
+        # Config is pulled from the parent `HeadlessProcess` instance as it
+        # may not necessarily be the same as what was provided for
+        # the `config` keyword.
+        self.config = self.process.config
         self.command_queue = Queue()
         self.ready = Event()
 
