@@ -38,6 +38,15 @@ sessionID
 users
 	Lists all users in the world
 	Usage: users 
+close
+	Closes the currnetly focused world
+	Usage: close 
+save
+	Saves the currnetly focused world
+	Usage: save 
+restart
+	Restarts the current world
+	Usage: restart 
 kick
 	Kicks given user from the session
 	Usage: kick <username>
@@ -117,15 +126,6 @@ startWorldURL
 startWorldTemplate
 	Start a new world from template
 	Usage: startworldtemplate <template name>
-close
-	Closes the currnetly focused world
-	Usage: close 
-save
-	Saves the currnetly focused world
-	Usage: save 
-restart
-	Restarts the current world
-	Usage: restart 
 import
 	Import an asset into the focused world
 	Usage: import <file path or URL>

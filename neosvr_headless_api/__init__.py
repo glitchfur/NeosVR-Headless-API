@@ -192,6 +192,8 @@ class HeadlessClient:
             # `almost_ready` is set to True when at least one world is
             # running. Only then do we look for the ">" character in the
             # prompt, to prevent false positives.
+            # TODO: This loop will never end if there are no worlds enabled
+            # in the configuration file.
             almost_ready = False
             while True:
                 ln = self.process.readline()
@@ -426,9 +428,25 @@ class HeadlessClient:
             users.append(user)
         return users
 
-    # TODO: Implement `close` here
-    # TODO: Implement `save` here
-    # TODO: Implement `restart` here
+    def close(self):
+        """Closes the currently focused world"""
+        cmd = self.send_command("close")
+        return {"success": True}
+
+    def save(self):
+        """Saves the currently focused world"""
+        # TODO: See if this still works if world is saved to cloud.
+        cmd = self.send_command("save")
+        for ln in cmd:
+            if ln == "World saved!":
+                return {"success": True, "message": ln}
+        else:
+            return {"success": False, "message": cmd[0]}
+
+    def restart(self):
+        """Restarts the current world"""
+        cmd = self.send_command("restart")
+        return {"success": True}
 
     def kick(self, username):
         """Kicks given user from the session"""

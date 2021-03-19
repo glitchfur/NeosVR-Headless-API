@@ -1,5 +1,11 @@
 # Changelog
 
+## 2021-03-19
+* The following commands have been added:
+  * `close`
+  * `save`
+  * `restart`
+
 ## 2021-03-18
 * Added the ability to provide a configuration file in another location using Neos' `--config` parameter.
 
