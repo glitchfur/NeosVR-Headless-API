@@ -1,4 +1,4 @@
-This is a list of commands supported by the headless client as of 2021-02-21.
+This is a list of commands supported by the headless client as of 2021-03-19.
 They are categorized as follows:
 
 IMPLEMENTED: Command has been added to NeosVR-Headless-API.
