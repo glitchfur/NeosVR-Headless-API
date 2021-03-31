@@ -170,8 +170,12 @@ class HeadlessClient:
     commands and the output will be parsed and returned as Python objects.
     """
     def __init__(self, neos_dir, config=None):
+        try:
+            self.process
+        except AttributeError:
+            raise RuntimeError("Please use either `LocalHeadlessClient` or "
+                "`RemoteHeadlessClient` instead.")
         self.neos_dir = neos_dir
-        self.process = HeadlessProcess(self.neos_dir, config=config)
         # Config is pulled from the parent `HeadlessProcess` instance as it
         # may not necessarily be the same as what was provided for
         # the `config` keyword.
@@ -611,12 +615,13 @@ class HeadlessClient:
             return {"success": False, "message": cmd[0]}
 
     def shutdown(self):
-        """Shuts down the headless client"""
-        # TODO: Do a SIGTERM if the client doesn't close in a reasonable time.
-        self.process.write("shutdown\n")
-        # TODO: Do something with `stdout` and `stderr` from this point forward.
-        # TODO: Make asynchronous?
-        return self.process.wait()
+        """
+        Shuts down the headless client.
+
+        This is an implementation-specific function, so it is overridden by
+        the `LocalHeadlessClient` and `RemoteHeadlessClient` subclasses.
+        """
+        pass
 
     def tick_rate(self, ticks_per_second):
         """Sets the maximum simulation rate for the servers"""
@@ -629,3 +634,29 @@ class HeadlessClient:
     # `log` is not supported.
 
     # END HEADLESS CLIENT COMMANDS
+
+class LocalHeadlessClient(HeadlessClient):
+    def __init__(self, neos_dir, config=None):
+        self.process = HeadlessProcess(neos_dir, config=config)
+        super().__init__(neos_dir, config)
+
+    def shutdown(self):
+        """Shuts down the headless client"""
+        # TODO: Do a SIGTERM if the client doesn't close in a reasonable time.
+        self.process.write("shutdown\n")
+        # TODO: Do something with `stdout` and `stderr` from this point forward.
+        # TODO: Make asynchronous?
+        return self.process.wait()
+
+class RemoteHeadlessClient(HeadlessClient):
+    def __init__(self, host, port, neos_dir, config=None):
+        # This import is here to effectively make `rpyc` an optional dependency.
+        from rpyc import connect
+        self.connection = connect(host, port)
+        self.remote_pid, self.process = \
+            self.connection.root.start_headless_process(neos_dir, config)
+        super().__init__(neos_dir, config)
+
+    def shutdown(self):
+        """Shuts down the headless client"""
+        return self.connection.root.stop_headless_process(self.remote_pid)

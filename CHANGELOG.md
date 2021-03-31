@@ -1,5 +1,14 @@
 # Changelog
 
+## 2021-03-31
+* Remote headless clients can now be controlled via a RPC interface. You can run the server with [rpc_server.py](rpc_server.py).
+* [rpyc](https://github.com/tomerfiliba-org/rpyc) is required to be able to use RPC. It is intentionally not listed in [requirements.txt](requirements.txt), effectively making it an optional dependency.
+* At the moment, no form of authentication or encryption is utilized. Do not use the RPC server in public-facing environments.
+* The `HeadlessClient` class is now subclasssed by `LocalHeadlessClient` and `RemoteHeadlessClient`. These should now be used instead of instantiating `HeadlessClient`.
+  * `LocalHeadlessClient` will start a headless client on the local machine, as the name implies. This was previously the behavior of the `HeadlessClient` class.
+  * `RemoteHeadlessClient` will connect to an RPC server at the given `host` and `port` and start a headless client on that host. All paths provided, including the directory Neos is in and the location of the configuration file, should be those of the remote host.
+  * Command queueing and parsing still happens on the local host regardless of whether the headless client is local or remote, the only thing that changes is where the data streams are coming from.
+
 ## 2021-03-19
 * The following commands have been added:
   * `close`
