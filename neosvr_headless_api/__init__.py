@@ -428,7 +428,9 @@ class HeadlessClient:
                 continue
             user = user.named
             user["name"] = user["name"].rstrip()
-            user["present"] = True if user["present"] == True else False
+            user["present"] = True if user["present"] == "True" else False
+            if user["fps"].is_integer():
+                user["fps"] = int(user["fps"])
             users.append(user)
         return users
 
