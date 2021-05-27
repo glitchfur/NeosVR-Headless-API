@@ -498,6 +498,17 @@ class HeadlessClient:
         else:
             return {"success": False, "message": cmd[0]}
 
+    def list_bans(self):
+        """Lists all active bans"""
+        cmd = self.send_command("listbans")
+        bans = []
+        for ln in cmd:
+            banned = parse(BAN_FORMAT, ln)
+            if banned == None:
+                continue
+            bans.append(banned.named)
+        return bans
+
     def ban_by_name(self, neos_username):
         """
         Bans user with given Neos username from

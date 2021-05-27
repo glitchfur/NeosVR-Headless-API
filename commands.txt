@@ -62,6 +62,9 @@ ban
 unban
 	Removes ban for user with given username
 	Usage: unban <username>
+listbans
+	Lists all active bans
+	Usage: listbans
 banByName
 	Bans user with given Neos username from all sessions hosted by this server
 	Usage: banbyname <Neos username>

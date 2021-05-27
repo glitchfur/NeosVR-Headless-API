@@ -4,6 +4,7 @@
 * Fixed two bugs related to the parsing of the `users` command:
   * Users will now correctly show as being present or not in a session, instead of always showing as not present.
   * Users whose FPS is an integer rather than a float (ex. 60 FPS exactly) at the time `users` is run will now show in the list instead of not showing at all. This was a conditional bug.
+* New command added: `listbans`
 
 ## 2021-03-31
 * Remote headless clients can now be controlled via a RPC interface. You can run the server with [rpc_server.py](rpc_server.py).

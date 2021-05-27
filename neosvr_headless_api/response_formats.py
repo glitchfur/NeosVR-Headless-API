@@ -18,6 +18,7 @@ SUPPORTED_NETWORK_PROTOCOLS_FORMAT = "Supported network protocols: {}"
 
 WORLD_FORMAT = "[{:d}] {name}Users: {users:d}\tPresent: {present:d}\tAccessLevel: {access_level}\tMaxUsers: {max_users:d}"
 USER_FORMAT = "{name}\tRole: {role}\tPresent: {present}\tPing: {ping:d} ms\tFPS: {fps:g}"
+BAN_FORMAT = "[{:d}]\tUsername: {name}\tUserID: {user_id}\tMachineId: {machine_id}"
 
 # This includes "SessionID:" because world names can contain newline characters.
 # By including a part of the next line in the format string we can make sure we
