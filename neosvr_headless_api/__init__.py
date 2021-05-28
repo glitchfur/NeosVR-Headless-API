@@ -99,7 +99,7 @@ class HeadlessProcess:
         ]
 
         for thread in self._threads:
-            thread.daemon = True
+            thread.daemon = True # TODO: Does this need to be a daemon thread?
             thread.start()
 
     def write(self, data):
@@ -665,6 +665,7 @@ class RemoteHeadlessClient(HeadlessClient):
     def __init__(self, host, port, neos_dir, config=None):
         # This import is here to effectively make `rpyc` an optional dependency.
         from rpyc import connect
+        self.host, self.port = host, port
         self.connection = connect(host, port)
         self.remote_pid, self.process = \
             self.connection.root.start_headless_process(neos_dir, config)

@@ -1,5 +1,8 @@
 # Changelog
 
+## 2021-05-28
+* Added `host` and `port` attributes to the `RemoteHeadlessClient` class.
+
 ## 2021-05-26
 * Fixed two bugs related to the parsing of the `users` command:
   * Users will now correctly show as being present or not in a session, instead of always showing as not present.
