@@ -341,7 +341,7 @@ class HeadlessClient:
         except ValueError:
             cmd = self.send_command("focus \"%s\"" % world_name_or_number)
         errors = [
-            "World with this name does not exit",
+            "World with this name does not exist",
             "World index out of range"
         ]
         if cmd and cmd[0] in errors:
