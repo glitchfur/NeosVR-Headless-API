@@ -447,8 +447,18 @@ class HeadlessClient:
             raise NeosError(cmd[0])
 
     def restart(self):
-        """Restarts the current world"""
-        cmd = self.send_command("restart")
+        """
+        Restarts the current world
+
+        NOTE: This is currently not implemented due to a bug in the headless
+        client. Calling this function will raise an exception. For info, see:
+        https://github.com/Neos-Metaverse/NeosPublic/issues/1841
+        """
+        # cmd = self.send_command("restart")
+        raise NotImplementedError(
+            "Restarting is temporarily disabled due to a headless client bug. "
+            "See https://github.com/Neos-Metaverse/NeosPublic/issues/1841 "
+            "for more information.")
 
     def kick(self, username):
         """Kicks given user from the session"""
