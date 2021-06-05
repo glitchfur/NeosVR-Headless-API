@@ -132,6 +132,9 @@ startWorldTemplate
 import
 	Import an asset into the focused world
 	Usage: import <file path or URL>
+importMinecraft
+	Import a Minecraft world. Requires Mineways to be installed.
+	Usage: importminecraft <folder containing Minecraft world with the level.dat file>
 dynamicImpulse
 	Sends a dynamic impulse with given tag to the scene root
 	Usage: dynamicimpulse <tag>
