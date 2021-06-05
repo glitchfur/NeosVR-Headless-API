@@ -1,5 +1,10 @@
 # Changelog
 
+## 2021-06-05
+* **Breaking change:** Calling any function that produces an error in the headless client will now raise an exception instead of returning the old format of `{"success": bool, "message": str}`. Applications should catch these exceptions to handle these errors and display the error message to the user.
+  * Commands that run successfully will simply return their success message as a `str`.
+  * Commands that don't print any messages on success will return `None`.
+
 ## 2021-05-28
 * Added `host` and `port` attributes to the `RemoteHeadlessClient` class.
 

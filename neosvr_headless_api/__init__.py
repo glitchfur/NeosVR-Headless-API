@@ -65,7 +65,7 @@ class HeadlessProcess:
         # run using all default values without creating a configuration file.
         # For the former case, `config` is set to the absolute path of this
         # configuration file. For the latter, `config` is left at `None`.
-        self.args = ["mono", "Neos.exe"]
+        self.args = ["mono", "Neos.exe"] # TODO: Windows doesn't use Mono.
         if config:
             if not path.exists(config):
                 raise FileNotFoundError(
@@ -289,33 +289,33 @@ class HeadlessClient:
         cmd = self.send_command("login \"%s\" \"%s\"" %
             (username_or_email, password))
         if cmd[-1] == "Logged in successfully!":
-            return {"success": True, "message": cmd[-1]}
+            return cmd[-1]
         else:
-            return {"success": False, "message": cmd[-1]}
+            raise NeosError(cmd[-1])
 
     def logout(self):
         """Log out from the current Neos account"""
         cmd = self.send_command("logout")
         if cmd[-1] == "Logged out!":
-            return {"success": True, "message": cmd[-1]}
+            return cmd[-1]
         else:
-            return {"success": False, "message": cmd[0]}
+            raise NeosError(cmd[0])
 
     def message(self, friend_name, message):
         """Message user in friends list"""
         cmd = self.send_command("message \"%s\" \"%s\"" % (friend_name, message))
         if cmd[0] == "Message sent!":
-            return {"success": True, "message": cmd[0]}
+            return cmd[0]
         else:
-            return {"success": False, "message": cmd[0]}
+            raise NeosError(cmd[0])
 
     def invite(self, friend_name):
         """Invite a friend to the currently focused world"""
         cmd = self.send_command("invite \"%s\"" % friend_name)
         if cmd[0] == "Invite sent!":
-            return {"success": True, "message": cmd[0]}
+            return cmd[0]
         else:
-            return {"success": False, "message": cmd[0]}
+            raise NeosError(cmd[0])
 
     # TODO: Implement `friendRequests` here
     # TODO: Implement `acceptFriendRequest` here
@@ -345,9 +345,7 @@ class HeadlessClient:
             "World index out of range"
         ]
         if cmd and cmd[0] in errors:
-            return {"success": False, "message": cmd[0]}
-        else:
-            return {"success": True}
+            raise NeosError(cmd[0])
 
     # TODO: Implement `startWorldURL` here
     # TODO: Implement `startWorldTemplate` here
@@ -437,7 +435,6 @@ class HeadlessClient:
     def close(self):
         """Closes the currently focused world"""
         cmd = self.send_command("close")
-        return {"success": True}
 
     def save(self):
         """Saves the currently focused world"""
@@ -445,58 +442,57 @@ class HeadlessClient:
         cmd = self.send_command("save")
         for ln in cmd:
             if ln == "World saved!":
-                return {"success": True, "message": ln}
+                return ln
         else:
-            return {"success": False, "message": cmd[0]}
+            raise NeosError(cmd[0])
 
     def restart(self):
         """Restarts the current world"""
         cmd = self.send_command("restart")
-        return {"success": True}
 
     def kick(self, username):
         """Kicks given user from the session"""
         cmd = self.send_command("kick \"%s\"" % username)
         for ln in cmd:
             if ln.endswith("kicked!"):
-                return {"success": True, "message": ln}
+                return ln
         else:
-            return {"success": False, "message": cmd[0]}
+            raise NeosError(cmd[0])
 
     def silence(self, username):
         """Silences given user in the session"""
         cmd = self.send_command("silence \"%s\"" % username)
         for ln in cmd:
             if ln.endswith("silenced!"):
-                return {"success": True, "message": ln}
+                return ln
         else:
-            return {"success": False, "message": cmd[0]}
+            raise NeosError(cmd[0])
 
     def unsilence(self, username):
         """Removes silence from given user in the session"""
         cmd = self.send_command("unsilence \"%s\"" % username)
         for ln in cmd:
             if ln.endswith("unsilenced!"):
-                return {"success": True, "message": ln}
+                return ln
         else:
-            return {"success": False, "message": cmd[0]}
+            raise NeosError(cmd[0])
 
     def ban(self, username):
         """Bans the user from all sessions hosted by this server"""
         cmd = self.send_command("ban \"%s\"" % username)
         for ln in cmd:
             if ln.endswith("banned!"):
-                return {"success": True, "message": ln}
+                return ln
         else:
-            return {"success": False, "message": cmd[0]}
+            raise NeosError(cmd[0])
 
     def unban(self, username):
         """Removes ban for user with given username"""
         cmd = self.send_command("unban \"%s\"" % username)
         if cmd[0] == "Ban removed!":
-            return {"success": True, "message": cmd[0]}
+            return cmd[0]
         else:
-            return {"success": False, "message": cmd[0]}
+            raise NeosError(cmd[0])
 
     def list_bans(self):
         """Lists all active bans"""
@@ -516,9 +512,9 @@ class HeadlessClient:
         """
         cmd = self.send_command("banbyname \"%s\"" % neos_username)
         if cmd[-1] == "User banned":
-            return {"success": True, "message": cmd[-1]}
+            return cmd[-1]
         else:
-            return {"success": False, "message": cmd[-1]}
+            raise NeosError(cmd[-1])
 
     def unban_by_name(self, neos_username):
         """
@@ -527,9 +523,9 @@ class HeadlessClient:
         """
         cmd = self.send_command("unbanbyname \"%s\"" % neos_username)
         if cmd[-1] == "Ban removed":
-            return {"success": True, "message": cmd[-1]}
+            return cmd[-1]
         else:
-            return {"success": False, "message": cmd[-1]}
+            raise NeosError(cmd[-1])
 
     def ban_by_id(self, user_id):
         """
@@ -538,9 +534,9 @@ class HeadlessClient:
         """
         cmd = self.send_command("banbyid \"%s\"" % user_id)
         if cmd[-1] == "User banned":
-            return {"success": True, "message": cmd[-1]}
+            return cmd[-1]
         else:
-            return {"success": False, "message": cmd[-1]}
+            raise NeosError(cmd[-1])
 
     def unban_by_id(self, user_id):
         """
@@ -549,68 +545,62 @@ class HeadlessClient:
         """
         cmd = self.send_command("unbanbyid \"%s\"" % user_id)
         if cmd[-1] == "Ban removed":
-            return {"success": True, "message": cmd[-1]}
+            return cmd[-1]
         else:
-            return {"success": False, "message": cmd[-1]}
+            raise NeosError(cmd[-1])
 
     def respawn(self, username):
         """Respawns given user"""
         cmd = self.send_command("respawn \"%s\"" % username)
         if cmd[-1].endswith("respawned!"):
-            return {"success": True, "message": cmd[-1]}
+            return cmd[-1]
         else:
-            return {"success": False, "message": cmd[-1]}
+            raise NeosError(cmd[-1])
 
     def role(self, username, role):
         """Assigns a role to given user"""
         cmd = self.send_command("role \"%s\" \"%s\"" % (username, role))
         if "now has role" in cmd[0]:
-            return {"success": True, "message": cmd[0]}
+            return cmd[0]
         else:
-            return {"success": False, "message": cmd[0]}
+            raise NeosError(cmd[0])
 
     def name(self, new_name):
         """Sets a new world name"""
         self.send_command("name \"%s\"" % new_name)
-        return {"success": True}
 
     def access_level(self, access_level_name):
         """Sets a new world access level"""
         cmd = self.send_command("accesslevel \"%s\"" % access_level_name)
         if "now has access level" in cmd[0]:
-            return {"success": True, "message": cmd[0]}
+            return cmd[0]
         else:
-            return {"success": False, "message": cmd[0]}
+            raise NeosError(cmd[0])
 
     def hide_from_listing(self, true_false):
         """Sets whether the session should be hidden from listing or not"""
         cmd = self.send_command("hidefromlisting \"%s\"" %
             str(true_false).lower())
         if cmd[0].startswith("World") and cmd[0].endswith("listing"):
-            return {"success": True, "message": cmd[0]}
+            return cmd[0]
         else:
-            return {"success": False, "message": cmd[0]}
+            raise NeosError(cmd[0])
 
     def description(self, new_description):
         """Sets a new world description"""
         self.send_command("description \"%s\"" % new_description)
-        return {"success": True}
 
     def max_users(self, max_users):
         """Sets user limit"""
         cmd = self.send_command("maxusers \"%s\"" % max_users)
         if cmd:
-            return {"success": False, "message": cmd[0]}
-        else:
-            return {"success": True}
+            raise NeosError(cmd[0])
 
     def away_kick_interval(self, interval_in_minutes):
         """Sets the away kick interval"""
         cmd = self.send_command("awaykickinterval \"%s\"" % interval_in_minutes)
         if cmd:
-            return {"success": False, "message": cmd[0]}
-        else:
-            return {"success": True}
+            raise NeosError(cmd[0])
 
     # TODO: Implement `import` here
     # TODO: Implement `importMinecraft` here
@@ -624,9 +614,9 @@ class HeadlessClient:
         """Forces full garbage collection"""
         cmd = self.send_command("gc")
         if cmd[0] == "GC finished":
-            return {"success": True, "message": cmd[0]}
+            return cmd[0]
         else:
-            return {"success": False, "message": cmd[0]}
+            raise NeosError(cmd[0])
 
     def shutdown(self):
         """
@@ -641,9 +631,9 @@ class HeadlessClient:
         """Sets the maximum simulation rate for the servers"""
         cmd = self.send_command("tickrate \"%s\"" % ticks_per_second)
         if cmd[0] == "Tick Rate Set!":
-            return {"success": True, "message": cmd[0]}
+            return cmd[0]
         else:
-            return {"success": False, "message": cmd[0]}
+            raise NeosError(cmd[0])
 
     # `log` is not supported.
 
@@ -675,3 +665,11 @@ class RemoteHeadlessClient(HeadlessClient):
     def shutdown(self):
         """Shuts down the headless client"""
         return self.connection.root.stop_headless_process(self.remote_pid)
+
+class NeosError(Exception):
+    """
+    Raised when a "soft" error message is printed to the headless client console
+    as a direct result of a command being executed, such as "User not found" or
+    "World with this name does not exist".
+    """
+    pass
