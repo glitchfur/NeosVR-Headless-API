@@ -1,5 +1,9 @@
 # Changelog
 
+## 2021-06-06
+* Added a custom class to substitute the supposedly improper use of Python's `Future` objects in regards to command queueing. This shouldn't have any effect on API usage.
+* The `async_` keyword argument has been removed from `send_command()`. Asynchronous command execution will be implemented in a better way in the near future.
+
 ## 2021-06-05
 * **Breaking change:** Calling any function that produces an error in the headless client will now raise an exception instead of returning the old format of `{"success": bool, "message": str}`. Applications should catch these exceptions to handle these errors and display the error message to the user.
   * Commands that run successfully will simply return their success message as a `str`.

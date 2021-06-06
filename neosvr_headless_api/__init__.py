@@ -44,7 +44,6 @@
 from threading import Thread, Event
 from queue import Queue, Empty
 from subprocess import Popen, PIPE
-from concurrent import futures
 from os import path
 
 from parse import parse, findall
@@ -247,38 +246,32 @@ class HeadlessClient:
             return
 
     def _command_processor(self):
-        """Executes commands in a separate thread."""
+        """Dedicated thread for processing command queue."""
         while True:
-            cmd, fut = self.command_queue.get()
-            self.process.write("%s\n" % cmd)
+            hcmd = self.command_queue.get()
+            self.process.write("%s\n" % hcmd.cmd)
             res = []
             while True:
                 ln = self.process.readline()
                 if ln.endswith(">"):
                     break
                 res.append(ln)
-            fut.set_result(res)
+            hcmd.set_result(res)
             self.command_queue.task_done()
 
     def wait(self):
         """Block until the process becomes ready."""
         return self.ready.wait()
 
-    def send_command(self, cmd, async_=False):
-        """
-        Sends a command to the console, returns the output. Set `async_`
-        to True to instead get a Future that will hold the eventual output.
-        """
+    def send_command(self, cmd):
+        """Sends a command to the console, returns the output."""
         # TODO: Raise an exception if client is not ready yet.
-        # TODO: Python documentation says not to create a Future object
-        # directly but we are doing it here anyway. Might make my own
-        # Future-like object in the future.
-        fut = futures.Future()
-        self.command_queue.put((cmd, fut))
-        if async_:
-            return fut
-        else:
-            return fut.result()
+        hcmd = HeadlessCommand(cmd)
+        self.command_queue.put(hcmd)
+        # This will block until it is this command's turn in the queue, and it
+        # will return the result as soon as it is available.
+        # See the `HeadlessCommand` class for more info.
+        return hcmd.result()
 
     # BEGIN HEADLESS CLIENT COMMANDS
 
@@ -675,6 +668,29 @@ class RemoteHeadlessClient(HeadlessClient):
     def shutdown(self):
         """Shuts down the headless client"""
         return self.connection.root.stop_headless_process(self.remote_pid)
+
+class HeadlessCommand:
+    """
+    Represents a headless client command and its eventual corresponding output.
+    This class may seem like a stripped down version of a "future", but its only
+    purpose is to keep the output of a command tied to the command that produced
+    it, without having to maintain synced lists/queues for both input and
+    output. This is used internally in the command queue to ensure commands are
+    executing synchronously and in chronological order of submission. There is
+    no need to use it directly for anything.
+    """
+    def __init__(self, cmd):
+        self.cmd = cmd
+        self._result = None
+        self._complete = Event()
+
+    def set_result(self, result):
+        self._result = result
+        self._complete.set()
+
+    def result(self, timeout=None):
+        self._complete.wait(timeout=timeout)
+        return self._result
 
 class NeosError(Exception):
     """
