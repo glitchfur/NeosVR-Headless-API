@@ -11,8 +11,8 @@ This project is not officially affiliated with Neos or the Neos development team
 ## Usage
 
 ```python
-from neosvr_headless_api import HeadlessClient
-client = HeadlessClient("/path/to/NeosVR/HeadlessClient")
+from neosvr_headless_api import LocalHeadlessClient
+client = LocalHeadlessClient("/path/to/NeosVR/HeadlessClient")
 ```
 
 Methods of `client` are commands that are available when running the headless client natively. See [commands.txt](commands.txt) to see what has been implemented so far. Commands that were originally `camelCase` instead have `snake_case` methods associated with them.
