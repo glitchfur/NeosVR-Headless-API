@@ -249,6 +249,42 @@ class HeadlessClient:
         """Dedicated thread for processing command queue."""
         while True:
             hcmd = self.command_queue.get()
+
+            # If a world is specified, try to focus it. If it doesn't exist,
+            # pass along an exception and don't execute the next command.
+
+            execute_command = True
+
+            if hcmd.world != None:
+                if isinstance(hcmd.world, int):
+                    self.process.write("focus %d\n" % hcmd.world)
+                else:
+                    self.process.write("focus \"%s\"\n" % hcmd.world)
+
+                errors = [
+                    "World with this name does not exist",
+                    "World index out of range"
+                ]
+
+                while True:
+                    ln = self.process.readline()
+                    if ln in errors:
+                        # Pass the exception, caller is responsible for raising.
+                        hcmd.set_result(NeosError(ln))
+                        # Signal to skip the remainder of the parent loop.
+                        execute_command = False
+                    elif ln.endswith(">"):
+                        break
+
+            # If a world to focus was specified and focusing that world failed,
+            # the command intended to be run after it should not be executed.
+
+            if not execute_command:
+                self.command_queue.task_done()
+                continue
+
+            # Execute the actual comamnd here.
+
             self.process.write("%s\n" % hcmd.cmd)
             res = []
             while True:
@@ -263,15 +299,18 @@ class HeadlessClient:
         """Block until the process becomes ready."""
         return self.ready.wait()
 
-    def send_command(self, cmd):
+    def send_command(self, cmd, world=None):
         """Sends a command to the console, returns the output."""
         # TODO: Raise an exception if client is not ready yet.
-        hcmd = HeadlessCommand(cmd)
+        hcmd = HeadlessCommand(cmd, world=world)
         self.command_queue.put(hcmd)
         # This will block until it is this command's turn in the queue, and it
         # will return the result as soon as it is available.
         # See the `HeadlessCommand` class for more info.
-        return hcmd.result()
+        result = hcmd.result()
+        if isinstance(result, NeosError):
+            raise result
+        return result
 
     # BEGIN HEADLESS CLIENT COMMANDS
 
@@ -302,9 +341,9 @@ class HeadlessClient:
         else:
             raise NeosError(cmd[0])
 
-    def invite(self, friend_name):
+    def invite(self, friend_name, world=None):
         """Invite a friend to the currently focused world"""
-        cmd = self.send_command("invite \"%s\"" % friend_name)
+        cmd = self.send_command("invite \"%s\"" % friend_name, world=world)
         if cmd[0] == "Invite sent!":
             return cmd[0]
         else:
@@ -343,12 +382,12 @@ class HeadlessClient:
     # TODO: Implement `startWorldURL` here
     # TODO: Implement `startWorldTemplate` here
 
-    def status(self):
+    def status(self, world=None):
         """Shows the status of the current world"""
         # Beware, this function does some funky stuff. It is to catch world
         # names with newlines, and ignore lines that shouldn't be there.
         # TODO: Capture unexpected output.
-        cmd = self.send_command("status")
+        cmd = self.send_command("status", world=world)
 
         format_status_mapping = [
             (STATUS_CURRENT_USERS_FORMAT, "current_users"),
@@ -395,23 +434,23 @@ class HeadlessClient:
 
         return status
 
-    def session_url(self):
+    def session_url(self, world=None):
         """Prints the URL of the current session"""
-        cmd = self.send_command("sessionurl")
+        cmd = self.send_command("sessionurl", world=world)
         return cmd[0]
 
-    def session_id(self):
+    def session_id(self, world=None):
         """Prints the ID of the current session"""
-        cmd = self.send_command("sessionid")
+        cmd = self.send_command("sessionid", world=world)
         return cmd[0]
 
     # `copySessionURL` is not supported.
     # `copySessionID` is not supported.
 
-    def users(self):
+    def users(self, world=None):
         """Lists all users in the world"""
         # TODO: Pipe unexpected output somewhere.
-        cmd = self.send_command("users")
+        cmd = self.send_command("users", world=world)
         users = []
         for ln in cmd:
             user = parse(USER_FORMAT, ln)
@@ -425,21 +464,21 @@ class HeadlessClient:
             users.append(user)
         return users
 
-    def close(self):
+    def close(self, world=None):
         """Closes the currently focused world"""
-        cmd = self.send_command("close")
+        cmd = self.send_command("close", world=world)
 
-    def save(self):
+    def save(self, world=None):
         """Saves the currently focused world"""
         # TODO: See if this still works if world is saved to cloud.
-        cmd = self.send_command("save")
+        cmd = self.send_command("save", world=world)
         for ln in cmd:
             if ln == "World saved!":
                 return ln
         else:
             raise NeosError(cmd[0])
 
-    def restart(self):
+    def restart(self, world=None):
         """
         Restarts the current world
 
@@ -447,42 +486,42 @@ class HeadlessClient:
         client. Calling this function will raise an exception. For info, see:
         https://github.com/Neos-Metaverse/NeosPublic/issues/1841
         """
-        # cmd = self.send_command("restart")
+        # cmd = self.send_command("restart", world=world)
         raise NotImplementedError(
             "Restarting is temporarily disabled due to a headless client bug. "
             "See https://github.com/Neos-Metaverse/NeosPublic/issues/1841 "
             "for more information.")
 
-    def kick(self, username):
+    def kick(self, username, world=None):
         """Kicks given user from the session"""
-        cmd = self.send_command("kick \"%s\"" % username)
+        cmd = self.send_command("kick \"%s\"" % username, world=world)
         for ln in cmd:
             if ln.endswith("kicked!"):
                 return ln
         else:
             raise NeosError(cmd[0])
 
-    def silence(self, username):
+    def silence(self, username, world=None):
         """Silences given user in the session"""
-        cmd = self.send_command("silence \"%s\"" % username)
+        cmd = self.send_command("silence \"%s\"" % username, world=world)
         for ln in cmd:
             if ln.endswith("silenced!"):
                 return ln
         else:
             raise NeosError(cmd[0])
 
-    def unsilence(self, username):
+    def unsilence(self, username, world=None):
         """Removes silence from given user in the session"""
-        cmd = self.send_command("unsilence \"%s\"" % username)
+        cmd = self.send_command("unsilence \"%s\"" % username, world=world)
         for ln in cmd:
             if ln.endswith("unsilenced!"):
                 return ln
         else:
             raise NeosError(cmd[0])
 
-    def ban(self, username):
+    def ban(self, username, world=None):
         """Bans the user from all sessions hosted by this server"""
-        cmd = self.send_command("ban \"%s\"" % username)
+        cmd = self.send_command("ban \"%s\"" % username, world=world)
         for ln in cmd:
             if ln.endswith("banned!"):
                 return ln
@@ -552,56 +591,67 @@ class HeadlessClient:
         else:
             raise NeosError(cmd[-1])
 
-    def respawn(self, username):
+    def respawn(self, username, world=None):
         """Respawns given user"""
-        cmd = self.send_command("respawn \"%s\"" % username)
+        cmd = self.send_command("respawn \"%s\"" % username, world=world)
         if cmd[-1].endswith("respawned!"):
             return cmd[-1]
         else:
             raise NeosError(cmd[-1])
 
-    def role(self, username, role):
+    def role(self, username, role, world=None):
         """Assigns a role to given user"""
-        cmd = self.send_command("role \"%s\" \"%s\"" % (username, role))
+        cmd = self.send_command(
+            "role \"%s\" \"%s\"" % (username, role),
+            world=world
+        )
         if "now has role" in cmd[0]:
             return cmd[0]
         else:
             raise NeosError(cmd[0])
 
-    def name(self, new_name):
+    def name(self, new_name, world=None):
         """Sets a new world name"""
-        self.send_command("name \"%s\"" % new_name)
+        self.send_command("name \"%s\"" % new_name, world=world)
 
-    def access_level(self, access_level_name):
+    def access_level(self, access_level_name, world=None):
         """Sets a new world access level"""
-        cmd = self.send_command("accesslevel \"%s\"" % access_level_name)
+        cmd = self.send_command(
+            "accesslevel \"%s\"" % access_level_name,
+            world=world
+        )
         if "now has access level" in cmd[0]:
             return cmd[0]
         else:
             raise NeosError(cmd[0])
 
-    def hide_from_listing(self, true_false):
+    def hide_from_listing(self, true_false, world=None):
         """Sets whether the session should be hidden from listing or not"""
-        cmd = self.send_command("hidefromlisting \"%s\"" %
-            str(true_false).lower())
+        cmd = self.send_command(
+            "hidefromlisting \"%s\"" % str(true_false).lower(),
+            world=world
+        )
         if cmd[0].startswith("World") and cmd[0].endswith("listing"):
             return cmd[0]
         else:
             raise NeosError(cmd[0])
 
-    def description(self, new_description):
+    def description(self, new_description, world=None):
         """Sets a new world description"""
-        self.send_command("description \"%s\"" % new_description)
+        self.send_command("description \"%s\"" % new_description, world=world)
 
-    def max_users(self, max_users):
+    def max_users(self, max_users, world=None):
         """Sets user limit"""
-        cmd = self.send_command("maxusers \"%s\"" % max_users)
+        cmd = self.send_command("maxusers \"%s\"" % max_users, world=world)
         if cmd:
             raise NeosError(cmd[0])
 
-    def away_kick_interval(self, interval_in_minutes):
+    def away_kick_interval(self, interval_in_minutes, world=None):
         """Sets the away kick interval"""
-        cmd = self.send_command("awaykickinterval \"%s\"" % interval_in_minutes)
+        cmd = self.send_command(
+            "awaykickinterval \"%s\"" % interval_in_minutes,
+            world=world
+        )
         if cmd:
             raise NeosError(cmd[0])
 
@@ -678,9 +728,14 @@ class HeadlessCommand:
     output. This is used internally in the command queue to ensure commands are
     executing synchronously and in chronological order of submission. There is
     no need to use it directly for anything.
+
+    If `world` is set, the command queue processing thread will try to focus or
+    "switch" to a different world immediately before executing the command. If
+    the specified world doesn't exist, the command will not execute.
     """
-    def __init__(self, cmd):
+    def __init__(self, cmd, world=None):
         self.cmd = cmd
+        self.world = world
         self._result = None
         self._complete = Event()
 

@@ -3,6 +3,8 @@
 ## 2021-06-06
 * Added a custom class to substitute the supposedly improper use of Python's `Future` objects in regards to command queueing. This shouldn't have any effect on API usage.
 * The `async_` keyword argument has been removed from `send_command()`. Asynchronous command execution will be implemented in a better way in the near future.
+* Most functions now accept a `world` keyword argument to execute a command "in" a particular world, by focusing/switching the world immediately before executing the command. If this argument is not defined, the command is executed in the currently focused world instead. Attempting to focus a world that doesn't exist will raise an exception and not execute the command.
+  * Certain commands such as `login`, `message`, etc. don't have the `world` keyword argument because they don't require a world to be focused.
 
 ## 2021-06-05
 * **Breaking change:** Calling any function that produces an error in the headless client will now raise an exception instead of returning the old format of `{"success": bool, "message": str}`. Applications should catch these exceptions to handle these errors and display the error message to the user.
