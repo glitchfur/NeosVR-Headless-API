@@ -44,6 +44,7 @@
 from threading import Thread, Event
 from queue import Queue, Empty
 from subprocess import Popen, PIPE
+from concurrent.futures import ThreadPoolExecutor
 from os import path
 
 from parse import parse, findall
@@ -214,6 +215,9 @@ class HeadlessClient:
         self._command_thread.daemon = True
         self._command_thread.start()
 
+        # TODO: Implement proper shutdown.
+        self._async_thread = ThreadPoolExecutor(max_workers=1)
+
     def _check_startup_line(self, ln):
         """Extracts info from startup messages."""
         fmt = parse(NEOS_VERSION_FORMAT, ln)
@@ -311,6 +315,16 @@ class HeadlessClient:
         if isinstance(result, NeosError):
             raise result
         return result
+
+    def async_(self, func, *args, **kwargs):
+        """
+        Wait for the results of a function asynchronously. Pass the `func` that
+        you want to execute as well as any required `args` or `kwargs`. This
+        returns a `Future` object from `concurrent.futures`. See Python's
+        documentation for information on how to use it.
+        """
+        fut = self._async_thread.submit(func, *args, **kwargs)
+        return fut
 
     # BEGIN HEADLESS CLIENT COMMANDS
 
