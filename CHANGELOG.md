@@ -1,5 +1,8 @@
 # Changelog
 
+## 2021-06-09
+* Calling any command or using `send_command()` directly will now raise an exception if the headless client is not ready to accept comamnds yet (for instance if it has just been started). Use the `wait()` method to block until the headless client is fully started up.
+
 ## 2021-06-06
 * Added a custom class to substitute the supposedly improper use of Python's `Future` objects in regards to command queueing. This shouldn't have any effect on API usage.
 * Most functions now accept a `world` keyword argument to execute a command "in" a particular world, by focusing/switching the world immediately before executing the command. If this argument is not defined, the command is executed in the currently focused world instead. Attempting to focus a world that doesn't exist will raise an exception and not execute the command.

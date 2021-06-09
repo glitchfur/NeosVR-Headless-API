@@ -305,7 +305,8 @@ class HeadlessClient:
 
     def send_command(self, cmd, world=None):
         """Sends a command to the console, returns the output."""
-        # TODO: Raise an exception if client is not ready yet.
+        if not self.ready.is_set():
+            raise HeadlessNotReady("The headless client is still starting up.")
         hcmd = HeadlessCommand(cmd, world=world)
         self.command_queue.put(hcmd)
         # This will block until it is this command's turn in the queue, and it
@@ -766,5 +767,13 @@ class NeosError(Exception):
     Raised when a "soft" error message is printed to the headless client console
     as a direct result of a command being executed, such as "User not found" or
     "World with this name does not exist".
+    """
+    pass
+
+class HeadlessNotReady(Exception):
+    """
+    Raised when a command is attempted to be executed before the headless
+    client has fully finished starting up. Use `wait()` to block until the
+    headless client is ready to accept commands.
     """
     pass
