@@ -1,5 +1,15 @@
 # Changelog
 
+## 2021-06-11
+* Parsing of commands is now much more strict and less error prone. See [this GitHub issue](https://github.com/Neos-Metaverse/NeosPublic/issues/2436) for information on why this is required.
+* The `status` command in particular has much improved parsing:
+  * The check for an empty session ID has been removed. This used to be needed as the Userspace world had no session ID, but the [Userspace world has been removed from the world listing](https://github.com/Neos-Metaverse/NeosPublic/issues/1811#issuecomment-793282104) as of Neos version 2021.3.9.130.
+  * Worlds with blank names are now parsed properly. The name will be set to `None` if there is no name.
+  * Descriptions with multiple lines are now parsed properly.
+  * Tags are now converted into the `list` type.
+  * **Known bug:** World names containing lines ending with a `>` character may cause undesirable behavior as it trips up detection of the prompt, particularly when running the `status` command. Avoid using world names ending with a `>` immediately before a new line. Specifically, be careful when using [text formatting](https://wiki.neos.com/Text_Formatting) in world names.
+* All other commands will now ignore unexpected output.
+
 ## 2021-06-09
 * Calling any command or using `send_command()` directly will now raise an exception if the headless client is not ready to accept comamnds yet (for instance if it has just been started). Use the `wait()` method to block until the headless client is fully started up.
 

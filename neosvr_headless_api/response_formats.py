@@ -20,11 +20,13 @@ WORLD_FORMAT = "[{:d}] {name}Users: {users:d}\tPresent: {present:d}\tAccessLevel
 USER_FORMAT = "{name}\tRole: {role}\tPresent: {present}\tPing: {ping:d} ms\tFPS: {fps:g}"
 BAN_FORMAT = "[{:d}]\tUsername: {name}\tUserID: {user_id}\tMachineId: {machine_id}"
 
-# This includes "SessionID:" because world names can contain newline characters.
-# By including a part of the next line in the format string we can make sure we
-# are getting the full world name, even if it includes newlines.
+# STATUS_NAME_FORMAT and STATUS_DESCRIPTION_FORMAT contain "SessionID:" and
+# "Tags:" at the end of their format strings respectively because it allows for
+# parsing world names and descriptions that contain newline characters. By
+# "reading into" the next line of the output like this, we can detect the true
+# end of those values.
 STATUS_NAME_FORMAT = "Name: {}\nSessionID:{}"
-# No STATUS_SESSION_ID_FORMAT because it can be None.
+STATUS_SESSION_ID_FORMAT = "SessionID: {}"
 STATUS_CURRENT_USERS_FORMAT = "Current Users: {:d}"
 STATUS_PRESENT_USERS_FORMAT = "Present Users: {:d}"
 STATUS_MAX_USERS_FORMAT = "Max Users: {:d}"
@@ -32,6 +34,6 @@ STATUS_UPTIME_FORMAT = "Uptime: {}"
 STATUS_ACCESS_LEVEL_FORMAT = "Access Level: {}"
 STATUS_HIDDEN_FROM_LISTING_FORMAT = "Hidden from listing: {}"
 STATUS_MOBILE_FRIENDLY_FORMAT = "Mobile Friendly: {}"
-# No STATUS_DESCRIPTION_FORMAT because it can be None.
-# No STATUS_TAGS_FORMAT because it can be empty.
+STATUS_DESCRIPTION_FORMAT = "Description: {}\nTags:{}"
+STATUS_TAGS_FORMAT = "Tags: {}"
 STATUS_USERS_FORMAT = "Users: {}"

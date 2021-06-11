@@ -1,25 +1,12 @@
 # NeosVR-Headless-API
 # Glitch, 2021
 
-# NOTES/GOTCHAS:
+# KNOWN BUGS:
 
-# 1. World names can contain newline (\n) characters, and the headless client
-# will actually print these and break the line. This can mess up the output of
-# any commands that include a world's name, and it even messes up the prompt
-# itself. This will need to be carefully handled in the event that it happens.
-# 2. On a few occasions I've witnessed the headless client spit out a line or
-# two of errors immediately after running a completely unrelated command. It
-# seemed like they were world-related, non-fatal errors that were waiting to be
-# printed until a command was run. This can make the output of commands
-# inconsistent. Very strict parsing rules will have to be put in place to ensure
-# that we read only what we want, and nothing that we don't.
-# 3. Running commands in very quick succession can make the headless client
-# behave as if it's in non-interactive log mode. Particularly, repeatedly
-# sending the "users" command and joining a world will print out detailed user
-# join information that otherwise would not have been printed, but would show up
-# normally if the client was properly put into log mode with the `log` command.
-# While it's rare that this could occur, a fix for the previous issue would
-# probably fix this one too.
+# World names that have any line ending with a ">" character will trip up the
+# prompt detector and cause undesirable behavior, particularly when running the
+# `status` command. Avoid using world names that fit this criteria.
+# Specifically, be careful when using text formatting in world names.
 
 # MISCELLANEOUS NOTES:
 
@@ -31,15 +18,8 @@
 
 # TODOS:
 
-# Handle blank world names.
 # Check if no world is currently focused. Could affect all commands.
 # Add optional timeout for wait()
-# When running commands, funnel unexpected output somewhere to be reviewed
-# later as they may be errors.
-
-# TESTING REQUIRED: If there are critical errors and a prompt never comes back,
-# Python will hang while waiting to read it. I don't know if this is a situation
-# that could occur though. Probably depends on the world.
 
 from threading import Thread, Event
 from queue import Queue, Empty
@@ -335,76 +315,87 @@ class HeadlessClient:
         """Log into a Neos account"""
         cmd = self.send_command("login \"%s\" \"%s\"" %
             (username_or_email, password))
-        if cmd[-1] == "Logged in successfully!":
-            return cmd[-1]
-        else:
-            raise NeosError(cmd[-1])
+        errors = [
+            "Invalid credentials",
+            "Already logged in!"
+        ]
+        for ln in cmd:
+            if ln == "Logged in successfully!":
+                return ln
+            elif ln in errors:
+                raise NeosError(ln)
 
     def logout(self):
         """Log out from the current Neos account"""
         cmd = self.send_command("logout")
-        if cmd[-1] == "Logged out!":
-            return cmd[-1]
-        else:
-            raise NeosError(cmd[0])
+        for ln in cmd:
+            if ln == "Logged out!":
+                return ln
+            elif ln == "Not logged in!":
+                raise NeosError(ln)
 
     def message(self, friend_name, message):
         """Message user in friends list"""
-        cmd = self.send_command("message \"%s\" \"%s\"" % (friend_name, message))
-        if cmd[0] == "Message sent!":
-            return cmd[0]
-        else:
-            raise NeosError(cmd[0])
+        cmd = self.send_command(
+            "message \"%s\" \"%s\"" % (friend_name, message))
+        for ln in cmd:
+            if ln == "Message sent!":
+                return ln
+            elif ln == "No friend with this username":
+                raise NeosError(ln)
 
     def invite(self, friend_name, world=None):
         """Invite a friend to the currently focused world"""
         cmd = self.send_command("invite \"%s\"" % friend_name, world=world)
-        if cmd[0] == "Invite sent!":
-            return cmd[0]
-        else:
-            raise NeosError(cmd[0])
+        for ln in cmd:
+            if ln == "Invite sent!":
+                return ln
+            elif ln == "No friend with this username":
+                raise NeosError(ln)
 
     # TODO: Implement `friendRequests` here
     # TODO: Implement `acceptFriendRequest` here
 
     def worlds(self):
         """Lists all active worlds"""
-        # TODO: This will ignore unexpected output as desired, but there is not
-        # an option to direct this unexpected output anywhere with `findall()`.
         cmd = self.send_command("worlds")
+
+        # World names can contain newline characters, so we have to put the
+        # whole command output back together and examine the whole thing.
         cmd = "\n".join(cmd)
         worlds = []
         for world in findall(WORLD_FORMAT, cmd):
             world = world.named
             world["name"] = world["name"].rstrip()
             worlds.append(world)
+
         return worlds
 
     def focus(self, world_name_or_number):
         """Focus world"""
+        # This command prints nothing on a successful switch.
         try:
             world_number = int(world_name_or_number)
             cmd = self.send_command("focus %d" % world_number)
         except ValueError:
             cmd = self.send_command("focus \"%s\"" % world_name_or_number)
         errors = [
-            "World with this name does not exist",
-            "World index out of range"
+            "World index out of range",
+            "World with this name does not exist"
         ]
-        if cmd and cmd[0] in errors:
-            raise NeosError(cmd[0])
+        for ln in cmd:
+            if ln in errors:
+                raise NeosError(ln)
 
     # TODO: Implement `startWorldURL` here
     # TODO: Implement `startWorldTemplate` here
 
     def status(self, world=None):
         """Shows the status of the current world"""
-        # Beware, this function does some funky stuff. It is to catch world
-        # names with newlines, and ignore lines that shouldn't be there.
-        # TODO: Capture unexpected output.
         cmd = self.send_command("status", world=world)
 
         format_status_mapping = [
+            (STATUS_SESSION_ID_FORMAT, "session_id"),
             (STATUS_CURRENT_USERS_FORMAT, "current_users"),
             (STATUS_PRESENT_USERS_FORMAT, "present_users"),
             (STATUS_MAX_USERS_FORMAT, "max_users"),
@@ -416,31 +407,61 @@ class HeadlessClient:
         ]
 
         status = {}
-        status["name"] = parse(STATUS_NAME_FORMAT, "\n".join(cmd))[0]
         for ln in cmd:
-            if ln.startswith("SessionID"):
-                session_id = ln.split(": ")[1]
-                if session_id == "":
-                    session_id = None
-                status["session_id"] = session_id
-                continue
+            # Parse the world name. This should catch almost any name: Normal
+            # world names, world names with XML formatting, world names that are
+            # multiple lines, and even world names that are blank.
+            # Known bug: World names with any line ending with a ">" character
+            # should be avoided, as this interferes with prompt detection.
+            if ln.startswith("Name: "):
+                name = ln.split(": ")[1]
+                # Set name to `None` if the world name is empty.
+                if name == "":
+                    status["name"] = None
+                    continue
+                # Ignore any errors that may have been printed to the console by
+                # finding out what line the world name is on, and cutting off
+                # everything else before it. This is a Neos bug.
+                # See: https://github.com/Neos-Metaverse/NeosPublic/issues/2436
+                name_index = cmd.index(ln)
+                # Put everything back together, to catch multi-line names.
+                trimmed_cmd = "\n".join(cmd[name_index:])
+                # Finally, pull out the world name.
+                status["name"] = parse(STATUS_NAME_FORMAT, trimmed_cmd)[0]
+
+            # Parse everything else, except for the if-statements below this.
             for i, j in format_status_mapping:
                 fmt = parse(i, ln)
                 if fmt:
                     status[j] = fmt[0]
                     break
-            if ln.startswith("Description"):
+
+            # Parse the description. It could be empty, or could be multi-line.
+            if ln.startswith("Description: "):
                 description = ln.split(": ")[1]
+                # Set description to `None` if the description is empty.
                 if description == "":
-                    description = None
-                status["description"] = description
-                continue
-            if ln.startswith("Tags"):
+                    status["description"] = None
+                    continue
+                # Remove all lines before the description, so that it lines up
+                # with the parsing string.
+                description_index = cmd.index(ln)
+                trimmed_cmd = "\n".join(cmd[description_index:])
+                status["description"] = parse(
+                    STATUS_DESCRIPTION_FORMAT,
+                    trimmed_cmd
+                )[0]
+
+            # Parse tags. It could be empty, or a comma-delimited list.
+            if ln.startswith("Tags: "):
                 tags = ln.split(": ")[1]
-                if tags == "":
-                    tags = []
-                status["tags"] = tags
-                continue
+                if tags == "": # No tags
+                    status["tags"] = []
+                    continue
+                status["tags"] = parse(STATUS_TAGS_FORMAT, ln)[0].split(", ")
+
+        # Finally, some type conversions.
+
         status["hidden_from_listing"] = \
             True if status["hidden_from_listing"] == "True" else False
         status["mobile_friendly"] = \
@@ -452,36 +473,41 @@ class HeadlessClient:
     def session_url(self, world=None):
         """Prints the URL of the current session"""
         cmd = self.send_command("sessionurl", world=world)
-        return cmd[0]
+        for ln in cmd:
+            if ln.startswith("http"):
+                return ln
 
     def session_id(self, world=None):
         """Prints the ID of the current session"""
         cmd = self.send_command("sessionid", world=world)
-        return cmd[0]
+        for ln in cmd:
+            if ln.startswith("S-"):
+                return ln
 
     # `copySessionURL` is not supported.
     # `copySessionID` is not supported.
 
     def users(self, world=None):
         """Lists all users in the world"""
-        # TODO: Pipe unexpected output somewhere.
         cmd = self.send_command("users", world=world)
+
         users = []
         for ln in cmd:
             user = parse(USER_FORMAT, ln)
             if user == None: # Invalid output
                 continue
             user = user.named
-            user["name"] = user["name"].rstrip()
             user["present"] = True if user["present"] == "True" else False
             if user["fps"].is_integer():
                 user["fps"] = int(user["fps"])
             users.append(user)
+
         return users
 
     def close(self, world=None):
         """Closes the currently focused world"""
-        cmd = self.send_command("close", world=world)
+        # This command doesn't print anything, so there's nothing to return.
+        self.send_command("close", world=world)
 
     def save(self, world=None):
         """Saves the currently focused world"""
@@ -491,6 +517,7 @@ class HeadlessClient:
             if ln == "World saved!":
                 return ln
         else:
+            # TODO: Technically unhandled output.
             raise NeosError(cmd[0])
 
     def restart(self, world=None):
@@ -513,8 +540,8 @@ class HeadlessClient:
         for ln in cmd:
             if ln.endswith("kicked!"):
                 return ln
-        else:
-            raise NeosError(cmd[0])
+            elif ln == "User not found":
+                raise NeosError(ln)
 
     def silence(self, username, world=None):
         """Silences given user in the session"""
@@ -522,8 +549,8 @@ class HeadlessClient:
         for ln in cmd:
             if ln.endswith("silenced!"):
                 return ln
-        else:
-            raise NeosError(cmd[0])
+            elif ln == "User not found":
+                raise NeosError(ln)
 
     def unsilence(self, username, world=None):
         """Removes silence from given user in the session"""
@@ -531,8 +558,8 @@ class HeadlessClient:
         for ln in cmd:
             if ln.endswith("unsilenced!"):
                 return ln
-        else:
-            raise NeosError(cmd[0])
+            elif ln == "User not found":
+                raise NeosError(ln)
 
     def ban(self, username, world=None):
         """Bans the user from all sessions hosted by this server"""
@@ -540,16 +567,17 @@ class HeadlessClient:
         for ln in cmd:
             if ln.endswith("banned!"):
                 return ln
-        else:
-            raise NeosError(cmd[0])
+            elif ln == "User not found":
+                raise NeosError(ln)
 
     def unban(self, username):
         """Removes ban for user with given username"""
         cmd = self.send_command("unban \"%s\"" % username)
-        if cmd[0] == "Ban removed!":
-            return cmd[0]
-        else:
-            raise NeosError(cmd[0])
+        for ln in cmd:
+            if ln == "Ban removed!":
+                return ln
+            elif ln.startswith("No ban with given username found."):
+                raise NeosError(ln)
 
     def list_bans(self):
         """Lists all active bans"""
@@ -557,7 +585,7 @@ class HeadlessClient:
         bans = []
         for ln in cmd:
             banned = parse(BAN_FORMAT, ln)
-            if banned == None:
+            if banned == None: # Invalid output
                 continue
             bans.append(banned.named)
         return bans
@@ -568,10 +596,11 @@ class HeadlessClient:
         all sessions hosted by this server
         """
         cmd = self.send_command("banbyname \"%s\"" % neos_username)
-        if cmd[-1] == "User banned":
-            return cmd[-1]
-        else:
-            raise NeosError(cmd[-1])
+        for ln in cmd:
+            if ln == "User banned":
+                return ln
+            elif ln == "User not found":
+                raise NeosError(ln)
 
     def unban_by_name(self, neos_username):
         """
@@ -579,10 +608,11 @@ class HeadlessClient:
         all sessions hosted by this server
         """
         cmd = self.send_command("unbanbyname \"%s\"" % neos_username)
-        if cmd[-1] == "Ban removed":
-            return cmd[-1]
-        else:
-            raise NeosError(cmd[-1])
+        for ln in cmd:
+            if ln == "Ban removed":
+                return ln
+            elif ln == "User not found":
+                raise NeosError(ln)
 
     def ban_by_id(self, user_id):
         """
@@ -590,10 +620,11 @@ class HeadlessClient:
         all sessions hosted by this server
         """
         cmd = self.send_command("banbyid \"%s\"" % user_id)
-        if cmd[-1] == "User banned":
-            return cmd[-1]
-        else:
-            raise NeosError(cmd[-1])
+        for ln in cmd:
+            if ln == "User banned":
+                return ln
+            elif ln == "User not found":
+                raise NeosError(ln)
 
     def unban_by_id(self, user_id):
         """
@@ -601,18 +632,20 @@ class HeadlessClient:
         all sessions hosted by this server
         """
         cmd = self.send_command("unbanbyid \"%s\"" % user_id)
-        if cmd[-1] == "Ban removed":
-            return cmd[-1]
-        else:
-            raise NeosError(cmd[-1])
+        for ln in cmd:
+            if ln == "Ban removed":
+                return ln
+            elif ln == "User not found":
+                raise NeosError(ln)
 
     def respawn(self, username, world=None):
         """Respawns given user"""
         cmd = self.send_command("respawn \"%s\"" % username, world=world)
-        if cmd[-1].endswith("respawned!"):
-            return cmd[-1]
-        else:
-            raise NeosError(cmd[-1])
+        for ln in cmd:
+            if ln.endswith("respawned!"):
+                return ln
+            elif ln == "User not found":
+                raise NeosError(ln)
 
     def role(self, username, role, world=None):
         """Assigns a role to given user"""
@@ -620,13 +653,17 @@ class HeadlessClient:
             "role \"%s\" \"%s\"" % (username, role),
             world=world
         )
-        if "now has role" in cmd[0]:
-            return cmd[0]
-        else:
-            raise NeosError(cmd[0])
+        for ln in cmd:
+            if " now has role " in ln and ln.endswith("!"):
+                return ln
+            elif ln == "User not found":
+                raise NeosError(ln)
+            elif ln.startswith("Role ") and ln.endswith("isn't available"):
+                raise NeosError(ln)
 
     def name(self, new_name, world=None):
         """Sets a new world name"""
+        # Command prints nothing on success. Nothing to return.
         self.send_command("name \"%s\"" % new_name, world=world)
 
     def access_level(self, access_level_name, world=None):
@@ -635,10 +672,11 @@ class HeadlessClient:
             "accesslevel \"%s\"" % access_level_name,
             world=world
         )
-        if "now has access level" in cmd[0]:
-            return cmd[0]
-        else:
-            raise NeosError(cmd[0])
+        for ln in cmd:
+            if ln.startswith("World ") and " now has access level " in ln:
+                return ln
+            elif ln.startswith("Invalid access level."):
+                raise NeosError(ln)
 
     def hide_from_listing(self, true_false, world=None):
         """Sets whether the session should be hidden from listing or not"""
@@ -646,20 +684,25 @@ class HeadlessClient:
             "hidefromlisting \"%s\"" % str(true_false).lower(),
             world=world
         )
-        if cmd[0].startswith("World") and cmd[0].endswith("listing"):
-            return cmd[0]
-        else:
-            raise NeosError(cmd[0])
+        for ln in cmd:
+            if ln.endswith("listing") and \
+                (" now hidden from " in ln or " will now show in " in ln):
+                return ln
+            elif ln == "Invalid value. Must be either true or false":
+                raise NeosError(ln)
 
     def description(self, new_description, world=None):
         """Sets a new world description"""
+        # Command prints nothing on success. Nothing to return.
         self.send_command("description \"%s\"" % new_description, world=world)
 
     def max_users(self, max_users, world=None):
         """Sets user limit"""
+        # Nothing printed on command success.
         cmd = self.send_command("maxusers \"%s\"" % max_users, world=world)
-        if cmd:
-            raise NeosError(cmd[0])
+        for ln in cmd:
+            if ln == "Invalid number. Must be within 1 and 256":
+                raise NeosError(ln)
 
     def away_kick_interval(self, interval_in_minutes, world=None):
         """Sets the away kick interval"""
@@ -667,8 +710,9 @@ class HeadlessClient:
             "awaykickinterval \"%s\"" % interval_in_minutes,
             world=world
         )
-        if cmd:
-            raise NeosError(cmd[0])
+        for ln in cmd:
+            if ln == "Invalid number":
+                raise NeosError(ln)
 
     # TODO: Implement `import` here
     # TODO: Implement `importMinecraft` here
@@ -681,10 +725,9 @@ class HeadlessClient:
     def gc(self):
         """Forces full garbage collection"""
         cmd = self.send_command("gc")
-        if cmd[0] == "GC finished":
-            return cmd[0]
-        else:
-            raise NeosError(cmd[0])
+        for ln in cmd:
+            if ln == "GC finished":
+                return ln
 
     def shutdown(self):
         """
@@ -698,10 +741,11 @@ class HeadlessClient:
     def tick_rate(self, ticks_per_second):
         """Sets the maximum simulation rate for the servers"""
         cmd = self.send_command("tickrate \"%s\"" % ticks_per_second)
-        if cmd[0] == "Tick Rate Set!":
-            return cmd[0]
-        else:
-            raise NeosError(cmd[0])
+        for ln in cmd:
+            if ln == "Tick Rate Set!":
+                return ln
+            elif ln == "Invalid number":
+                raise NeosError(ln)
 
     # `log` is not supported.
 
