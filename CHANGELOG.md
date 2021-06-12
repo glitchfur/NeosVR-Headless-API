@@ -1,5 +1,8 @@
 # Changelog
 
+## 2021-06-12
+* Added checks for additional error messages, particularly "Not logged in!" errors that occur when running a command that requires a logged in user while not being logged in.
+
 ## 2021-06-11
 * Parsing of commands is now much more strict and less error prone. See [this GitHub issue](https://github.com/Neos-Metaverse/NeosPublic/issues/2436) for information on why this is required.
 * The `status` command in particular has much improved parsing:

@@ -338,19 +338,27 @@ class HeadlessClient:
         """Message user in friends list"""
         cmd = self.send_command(
             "message \"%s\" \"%s\"" % (friend_name, message))
+        errors = [
+            "No friend with this username",
+            "Not logged in!"
+        ]
         for ln in cmd:
             if ln == "Message sent!":
                 return ln
-            elif ln == "No friend with this username":
+            elif ln in errors:
                 raise NeosError(ln)
 
     def invite(self, friend_name, world=None):
         """Invite a friend to the currently focused world"""
         cmd = self.send_command("invite \"%s\"" % friend_name, world=world)
+        errors = [
+            "No friend with this username",
+            "Not logged in!"
+        ]
         for ln in cmd:
             if ln == "Invite sent!":
                 return ln
-            elif ln == "No friend with this username":
+            elif ln in errors:
                 raise NeosError(ln)
 
     # TODO: Implement `friendRequests` here
