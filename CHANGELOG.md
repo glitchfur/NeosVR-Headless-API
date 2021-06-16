@@ -1,5 +1,8 @@
 # Changelog
 
+## 2021-06-16
+* Added exception for unexpected errors that occur in the headless client.
+
 ## 2021-06-12
 * Added checks for additional error messages, particularly "Not logged in!" errors that occur when running a command that requires a logged in user while not being logged in.
 

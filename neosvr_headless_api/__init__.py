@@ -324,6 +324,7 @@ class HeadlessClient:
                 return ln
             elif ln in errors:
                 raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     def logout(self):
         """Log out from the current Neos account"""
@@ -333,6 +334,7 @@ class HeadlessClient:
                 return ln
             elif ln == "Not logged in!":
                 raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     def message(self, friend_name, message):
         """Message user in friends list"""
@@ -347,6 +349,7 @@ class HeadlessClient:
                 return ln
             elif ln in errors:
                 raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     def invite(self, friend_name, world=None):
         """Invite a friend to the currently focused world"""
@@ -360,6 +363,7 @@ class HeadlessClient:
                 return ln
             elif ln in errors:
                 raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     # TODO: Implement `friendRequests` here
     # TODO: Implement `acceptFriendRequest` here
@@ -484,6 +488,7 @@ class HeadlessClient:
         for ln in cmd:
             if ln.startswith("http"):
                 return ln
+        raise UnhandledError("\n".join(cmd))
 
     def session_id(self, world=None):
         """Prints the ID of the current session"""
@@ -491,6 +496,7 @@ class HeadlessClient:
         for ln in cmd:
             if ln.startswith("S-"):
                 return ln
+        raise UnhandledError("\n".join(cmd))
 
     # `copySessionURL` is not supported.
     # `copySessionID` is not supported.
@@ -524,9 +530,7 @@ class HeadlessClient:
         for ln in cmd:
             if ln == "World saved!":
                 return ln
-        else:
-            # TODO: Technically unhandled output.
-            raise NeosError(cmd[0])
+        raise UnhandledError("\n".join(cmd))
 
     def restart(self, world=None):
         """
@@ -550,6 +554,7 @@ class HeadlessClient:
                 return ln
             elif ln == "User not found":
                 raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     def silence(self, username, world=None):
         """Silences given user in the session"""
@@ -559,6 +564,7 @@ class HeadlessClient:
                 return ln
             elif ln == "User not found":
                 raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     def unsilence(self, username, world=None):
         """Removes silence from given user in the session"""
@@ -568,6 +574,7 @@ class HeadlessClient:
                 return ln
             elif ln == "User not found":
                 raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     def ban(self, username, world=None):
         """Bans the user from all sessions hosted by this server"""
@@ -577,6 +584,7 @@ class HeadlessClient:
                 return ln
             elif ln == "User not found":
                 raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     def unban(self, username):
         """Removes ban for user with given username"""
@@ -586,6 +594,7 @@ class HeadlessClient:
                 return ln
             elif ln.startswith("No ban with given username found."):
                 raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     def list_bans(self):
         """Lists all active bans"""
@@ -609,6 +618,7 @@ class HeadlessClient:
                 return ln
             elif ln == "User not found":
                 raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     def unban_by_name(self, neos_username):
         """
@@ -621,6 +631,7 @@ class HeadlessClient:
                 return ln
             elif ln == "User not found":
                 raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     def ban_by_id(self, user_id):
         """
@@ -633,6 +644,7 @@ class HeadlessClient:
                 return ln
             elif ln == "User not found":
                 raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     def unban_by_id(self, user_id):
         """
@@ -645,6 +657,7 @@ class HeadlessClient:
                 return ln
             elif ln == "User not found":
                 raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     def respawn(self, username, world=None):
         """Respawns given user"""
@@ -654,6 +667,7 @@ class HeadlessClient:
                 return ln
             elif ln == "User not found":
                 raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     def role(self, username, role, world=None):
         """Assigns a role to given user"""
@@ -668,6 +682,7 @@ class HeadlessClient:
                 raise NeosError(ln)
             elif ln.startswith("Role ") and ln.endswith("isn't available"):
                 raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     def name(self, new_name, world=None):
         """Sets a new world name"""
@@ -685,6 +700,7 @@ class HeadlessClient:
                 return ln
             elif ln.startswith("Invalid access level."):
                 raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     def hide_from_listing(self, true_false, world=None):
         """Sets whether the session should be hidden from listing or not"""
@@ -698,6 +714,7 @@ class HeadlessClient:
                 return ln
             elif ln == "Invalid value. Must be either true or false":
                 raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     def description(self, new_description, world=None):
         """Sets a new world description"""
@@ -714,6 +731,7 @@ class HeadlessClient:
 
     def away_kick_interval(self, interval_in_minutes, world=None):
         """Sets the away kick interval"""
+        # Nothing printed on command success.
         cmd = self.send_command(
             "awaykickinterval \"%s\"" % interval_in_minutes,
             world=world
@@ -736,6 +754,7 @@ class HeadlessClient:
         for ln in cmd:
             if ln == "GC finished":
                 return ln
+        raise UnhandledError("\n".join(cmd))
 
     def shutdown(self):
         """
@@ -754,6 +773,7 @@ class HeadlessClient:
                 return ln
             elif ln == "Invalid number":
                 raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     # `log` is not supported.
 
@@ -819,6 +839,18 @@ class NeosError(Exception):
     Raised when a "soft" error message is printed to the headless client console
     as a direct result of a command being executed, such as "User not found" or
     "World with this name does not exist".
+    """
+    pass
+
+class UnhandledError(Exception):
+    """
+    Raised when a command produces an error that is not accounted for in this
+    API. The full output of the command is passed as the exception message. Note
+    that this could contain log messages, and consequently data such as IP
+    addresses, so be aware of this if you are going to forward these messages to
+    an end user. If an error raises this exception that you feel should raise a
+    `NeosError` exception instead, feel free to open an issue or submit a pull
+    request to have it implemented.
     """
     pass
 
