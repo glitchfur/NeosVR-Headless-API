@@ -613,10 +613,11 @@ class HeadlessClient:
         all sessions hosted by this server
         """
         cmd = self.send_command("banbyname \"%s\"" % neos_username)
+        errors = ["User not found", "Already banned"]
         for ln in cmd:
             if ln == "User banned":
                 return ln
-            elif ln == "User not found":
+            elif ln in errors:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 
@@ -639,10 +640,11 @@ class HeadlessClient:
         all sessions hosted by this server
         """
         cmd = self.send_command("banbyid \"%s\"" % user_id)
+        errors = ["User not found", "Already banned"]
         for ln in cmd:
             if ln == "User banned":
                 return ln
-            elif ln == "User not found":
+            elif ln in errors:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 

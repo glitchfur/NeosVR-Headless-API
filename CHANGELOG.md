@@ -1,5 +1,8 @@
 # Changelog
 
+## 2021-06-17
+* Added checks for new error messages added in Neos version [2021.6.14.1031](https://github.com/Neos-Metaverse/NeosPublic/issues/2457#issuecomment-860859990), which occur when attempting to use `banByName` or `banByID` to ban a user who has already been banned.
+
 ## 2021-06-16
 * Added exception for unexpected errors that occur in the headless client.
 
