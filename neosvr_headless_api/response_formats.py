@@ -17,7 +17,7 @@ MACHINE_ID_FORMAT = "MachineID: {}"
 SUPPORTED_NETWORK_PROTOCOLS_FORMAT = "Supported network protocols: {}"
 
 WORLD_FORMAT = "[{:d}] {name}Users: {users:d}\tPresent: {present:d}\tAccessLevel: {access_level}\tMaxUsers: {max_users:d}"
-USER_FORMAT = "{name}\tRole: {role}\tPresent: {present}\tPing: {ping:d} ms\tFPS: {fps:g}"
+USER_FORMAT = "{name}\tID: {user_id}\tRole: {role}\tPresent: {present}\tPing: {ping:d} ms\tFPS: {fps:g}"
 BAN_FORMAT = "[{:d}]\tUsername: {name}\tUserID: {user_id}\tMachineId: {machine_id}"
 
 # STATUS_NAME_FORMAT and STATUS_DESCRIPTION_FORMAT contain "SessionID:" and

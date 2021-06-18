@@ -1,5 +1,8 @@
 # Changelog
 
+## 2021-06-18
+* User IDs are now included when listing the users in a session, which is a feature that was added in Neos version [2021.6.18.4](https://github.com/Neos-Metaverse/NeosPublic/issues/2485#issuecomment-863639775).
+
 ## 2021-06-17
 * Added checks for new error messages added in Neos version [2021.6.14.1031](https://github.com/Neos-Metaverse/NeosPublic/issues/2457#issuecomment-860859990), which occur when attempting to use `banByName` or `banByID` to ban a user who has already been banned.
 
