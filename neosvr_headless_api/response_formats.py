@@ -17,7 +17,14 @@ MACHINE_ID_FORMAT = "MachineID: {}"
 SUPPORTED_NETWORK_PROTOCOLS_FORMAT = "Supported network protocols: {}"
 
 WORLD_FORMAT = "[{:d}] {name}Users: {users:d}\tPresent: {present:d}\tAccessLevel: {access_level}\tMaxUsers: {max_users:d}"
-USER_FORMAT = "{name}\tID: {user_id}\tRole: {role}\tPresent: {present}\tPing: {ping:d} ms\tFPS: {fps:g}"
+# Note the lack of space between "ID:" and "{user_id}" in the format string
+# below. This is intentional. If the headless user is not logged into a Neos
+# account, the ID field will be blank. In this case, "{user_id}" will catch the
+# single space character, which we can then interpret as no ID. If we left the
+# space in the format string, then `parse()` would fail entirely. This also
+# means in all other cases, valid IDs will have an extra space before them, but
+# that can be easily trimmed off.
+USER_FORMAT = "{name}\tID:{user_id}\tRole: {role}\tPresent: {present}\tPing: {ping:d} ms\tFPS: {fps:g}"
 BAN_FORMAT = "[{:d}]\tUsername: {name}\tUserID: {user_id}\tMachineId: {machine_id}"
 
 # STATUS_NAME_FORMAT and STATUS_DESCRIPTION_FORMAT contain "SessionID:" and

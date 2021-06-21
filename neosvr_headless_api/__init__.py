@@ -511,6 +511,14 @@ class HeadlessClient:
             if user == None: # Invalid output
                 continue
             user = user.named
+            # Check if a user has a user ID and set it to `None` if they don't.
+            # This should only happen for the headless user if it is not logged
+            # into a Neos account.
+            user_id = user["user_id"].lstrip()
+            if user_id == "":
+                user["user_id"] = None
+            else:
+                user["user_id"] = user_id
             user["present"] = True if user["present"] == "True" else False
             if user["fps"].is_integer():
                 user["fps"] = int(user["fps"])

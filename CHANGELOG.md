@@ -1,5 +1,8 @@
 # Changelog
 
+## 2021-06-21
+* Fixed a conditional parsing bug in the `users()` function where a headless user would not show up in the user list if it was not logged into a Neos account. This occurred because unauthenticated headless users have no user IDs, and this would cause parsing to fail. Headless users will now have their user ID set to `None` in these instances.
+
 ## 2021-06-18
 * User IDs are now included when listing the users in a session, which is a feature that was added in Neos version [2021.6.18.4](https://github.com/Neos-Metaverse/NeosPublic/issues/2485#issuecomment-863639775).
 
