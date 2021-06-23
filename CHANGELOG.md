@@ -1,5 +1,10 @@
 # Changelog
 
+## 2021-06-23
+* Added an argument parser to the RPC server. It now accepts the following arguments:
+  * `--host`: Specify the host or IP to bind to. Defaults to `127.0.0.1` (previously `0.0.0.0`).
+  * `-p` or `--port`: Specify the TCP port to bind to. Defaults to `16881`.
+
 ## 2021-06-21
 * Fixed a conditional parsing bug in the `users()` function where a headless user would not show up in the user list if it was not logged into a Neos account. This occurred because unauthenticated headless users have no user IDs, and this would cause parsing to fail. Headless users will now have their user ID set to `None` in these instances.
 

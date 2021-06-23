@@ -6,6 +6,7 @@
 # This is the RPC server which can be used to control headless clients remotely.
 
 import logging
+import argparse
 
 from rpyc import Service, restricted
 from neosvr_headless_api import HeadlessProcess
@@ -14,6 +15,31 @@ logging.basicConfig(
     format="[%(asctime)s][%(levelname)s] %(message)s",
     level=logging.INFO
 )
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="RPC server for controlling multiple headless clients"
+    )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="The host or IP address to bind to. (Default: 127.0.0.1)"
+    )
+    parser.add_argument(
+        "-p", "--port",
+        type=int,
+        default=16881,
+        help="The TCP port to bind to. (Default: 16881)"
+    )
+    args = parser.parse_args()
+
+    from rpyc.utils.server import ThreadedServer
+    server = ThreadedServer(
+        HeadlessProcessService(),
+        hostname=args.host,
+        port=args.port
+    )
+    server.start()
 
 class HeadlessProcessService(Service):
     def __init__(self):
@@ -69,6 +95,4 @@ class HeadlessProcessService(Service):
         return self.processes[pid]
 
 if __name__ == "__main__":
-    from rpyc.utils.server import ThreadedServer
-    server = ThreadedServer(HeadlessProcessService(), port=16881)
-    server.start()
+    main()
