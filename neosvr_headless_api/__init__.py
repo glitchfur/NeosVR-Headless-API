@@ -8,14 +8,6 @@
 # `status` command. Avoid using world names that fit this criteria.
 # Specifically, be careful when using text formatting in world names.
 
-# MISCELLANEOUS NOTES:
-
-# List of valid roles for users:
-# Admin, Builder, Moderator, Guest, Spectator
-
-# List of valid access levels for worlds:
-# Private, LAN, Friends, FriendsOfFriends, RegisteredUsers, Anyone
-
 # TODOS:
 
 # Check if no world is currently focused. Could affect all commands.
@@ -30,6 +22,21 @@ from os import path
 from parse import parse, findall
 
 from .response_formats import *
+
+# Constants for "role" command
+ADMIN = "Admin"
+BUILDER = "Builder"
+MODERATOR = "Moderator"
+GUEST = "Guest"
+SPECTATOR = "Spectator"
+
+# Constants for "accessLevel" command
+PRIVATE = "Private"
+LAN = "LAN"
+FRIENDS = "Friends"
+FRIENDS_OF_FRIENDS = "FriendsOfFriends"
+REGISTERED_USERS = "RegisteredUsers"
+ANYONE = "Anyone"
 
 class HeadlessProcess:
     """

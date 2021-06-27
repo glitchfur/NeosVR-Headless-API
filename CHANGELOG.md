@@ -1,5 +1,10 @@
 # Changelog
 
+## 2021-06-27
+* Defined constants for Neos' roles and access levels.
+  * For user roles, they are: `ADMIN`, `BUILDER`, `MODERATOR`, `GUEST`, and `SPECTATOR`.
+  * For session/world access levels, they are: `PRIVATE`, `LAN`, `FRIENDS`, `FRIENDS_OF_FRIENDS`, `REGISTERED_USERS`, and `ANYONE`.
+
 ## 2021-06-23
 * Added an argument parser to the RPC server. It now accepts the following arguments:
   * `--host`: Specify the host or IP to bind to. Defaults to `127.0.0.1` (previously `0.0.0.0`).
