@@ -274,7 +274,7 @@ class HeadlessClient:
                 self.command_queue.task_done()
                 continue
 
-            # Execute the actual comamnd here.
+            # Execute the actual command here.
 
             self.process.write("%s\n" % hcmd.cmd)
             res = []
