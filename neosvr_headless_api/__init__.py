@@ -11,7 +11,6 @@
 # TODOS:
 
 # Check if no world is currently focused. Could affect all commands.
-# Add optional timeout for wait()
 
 from threading import Thread, Event
 from queue import Queue, Empty
@@ -99,9 +98,64 @@ class HeadlessProcess:
         self._stdout_queue.task_done()
         return res
 
-    def wait(self):
-        """Block until the process exits. Alias for `self.process.wait()`"""
-        return self.process.wait()
+    def shutdown(self, timeout=None, wait=True):
+        """
+        Shut down the headless client by sending the "shutdown" command. If
+        `wait` is `True`, block until the process exits and returns the exit
+        code. You can specify `timeout` to wait up to a number of seconds for
+        the process to exit, else `TimeoutExpired` will be raised. `timeout` has
+        no effect if `wait` is `False`.
+        """
+        self.write("shutdown\n")
+        if wait:
+            return self.wait(timeout=timeout)
+
+    def sigint(self, timeout=None, wait=True):
+        """
+        Send a SIGINT (2) signal to the process, i.e. Ctrl+C.
+        If `wait` is `True` and `timeout` is not `None`, block and wait up to
+        `timeout` seconds for the process to exit and return the exit code,
+        otherwise `TimeoutExpired` will be raised. `timeout` has no effect if
+        `wait` is `False`.
+        """
+        self.process.send_signal(2)
+        if wait:
+            return self.wait(timeout=timeout)
+
+    def terminate(self, timeout=None, wait=True):
+        """
+        Send a SIGTERM (15) signal to the process.
+        If `wait` is `True` and `timeout` is not `None`, block and wait up to
+        `timeout` seconds for the process to exit and return the exit code,
+        otherwise `TimeoutExpired` will be raised. `timeout` has no effect if
+        `wait` is `False`.
+        """
+        self.process.terminate()
+        if wait:
+            return self.wait(timeout=timeout)
+
+    def kill(self, timeout=None, wait=True):
+        """
+        Send a SIGKILL (9) signal to the process.
+        If `wait` is `True` and `timeout` is not `None`, block and wait up to
+        `timeout` seconds for the process to exit and return the exit code,
+        otherwise `TimeoutExpired` will be raised. `timeout` has no effect if
+        `wait` is `False`.
+        """
+        # NOTE: It's probably not be necessary to "wait" for a SIGKILL since it
+        # should be immediate, but it's here anyway for consistency.
+        self.process.kill()
+        if wait:
+            return self.wait(timeout=timeout)
+
+    def wait(self, timeout=None):
+        """
+        Alias for `self.process.wait()`
+        Block until the process exits and return the exit code. If `timeout` is
+        not `None`, wait up to `timeout` seconds, otherwise `TimeoutExpired`
+        will be raised.
+        """
+        return self.process.wait(timeout=timeout)
 
     def _stdin_writer(self):
         while True:
@@ -286,13 +340,60 @@ class HeadlessClient:
             hcmd.set_result(res)
             self.command_queue.task_done()
 
-    def wait(self):
-        """Block until the process becomes ready."""
-        return self.ready.wait()
+    def is_ready(self):
+        """
+        Returns `True` if the headless client is ready to accept commands.
+        Otherwise returns `False`. Alias for `self.ready.is_set()`
+        """
+        return self.ready.is_set()
+
+    def wait_for_ready(self, timeout=None):
+        """
+        Block until the headless client is ready to accept commands. Returns
+        `True` when ready. If `timeout` is specified and the headless client
+        takes longer than `timeout` seconds to become ready, returns `False`.
+        """
+        return self.ready.wait(timeout=timeout)
+
+    def wait_for_shutdown(self, timeout=None):
+        """
+        Block until the headless client has shut down. Returns the exit code
+        when the client has exited. If `timeout` is specified and the headless
+        client takes longer than `timeout` seconds to shut down, raises a
+        `TimeoutExpired` exception.
+        """
+        return self.process.wait(timeout=timeout)
+
+    def sigint(self):
+        """
+        Send a SIGINT to the headless client.
+
+        This is an implementation-specific function, so it is overridden by
+        the `LocalHeadlessClient` and `RemoteHeadlessClient` subclasses.
+        """
+        pass
+
+    def terminate(self):
+        """
+        Send a SIGTERM to the headless client.
+
+        This is an implementation-specific function, so it is overridden by
+        the `LocalHeadlessClient` and `RemoteHeadlessClient` subclasses.
+        """
+        pass
+
+    def kill(self):
+        """
+        Send a SIGKILL to the headless client.
+
+        This is an implementation-specific function, so it is overridden by
+        the `LocalHeadlessClient` and `RemoteHeadlessClient` subclasses.
+        """
+        pass
 
     def send_command(self, cmd, world=None):
         """Sends a command to the console, returns the output."""
-        if not self.ready.is_set():
+        if not self.is_ready():
             raise HeadlessNotReady("The headless client is still starting up.")
         hcmd = HeadlessCommand(cmd, world=world)
         self.command_queue.put(hcmd)
@@ -801,13 +902,41 @@ class LocalHeadlessClient(HeadlessClient):
         self.process = HeadlessProcess(neos_dir, config=config)
         super().__init__(neos_dir, config)
 
-    def shutdown(self):
-        """Shuts down the headless client"""
-        # TODO: Do a SIGTERM if the client doesn't close in a reasonable time.
-        self.process.write("shutdown\n")
-        # TODO: Do something with `stdout` and `stderr` from this point forward.
-        # TODO: Make asynchronous?
-        return self.process.wait()
+    def shutdown(self, timeout=None, wait=True):
+        """
+        Shut down the headless client using the "shutdown" command. If `wait` is
+        `True`, wait up to `timeout` seconds for the process to exit and return
+        the exit code. If the process doesn't exit in time, a `TimeoutExpired`
+        exception is raised.
+        """
+        return self.process.shutdown(timeout=timeout, wait=wait)
+
+    def sigint(self, timeout=None, wait=True):
+        """
+        Send a SIGINT to the headless client, same as pressing Ctrl+C.
+        If `wait` is `True`, block until the process exits and return the exit
+        code. If `timeout` is specified, raise a `TimeoutExpired` exception if
+        the process doesn't exit in time. Should close the client cleanly.
+        """
+        return self.process.sigint(timeout=timeout, wait=wait)
+
+    def terminate(self, timeout=None, wait=True):
+        """
+        Send a SIGTERM to the headless client, politely asking it to close.
+        If `wait` is `True`, block until the process exits and return the exit
+        code. If `timeout` is specified, raise a `TimeoutExpired` exception if
+        the process doesn't exit in time. May not properly close on Linux.
+        """
+        return self.process.terminate(timeout=timeout, wait=wait)
+
+    def kill(self, timeout=None, wait=True):
+        """
+        Send a SIGKILL to the headless client, immediately force closing it.
+        If `wait` is `True`, block until the process exits and return the exit
+        code. If `timeout` is specified, raise a `TimeoutExpired` exception if
+        the process doesn't exit in time. This should be a last resort option.
+        """
+        return self.process.kill(timeout=timeout, wait=wait)
 
 class RemoteHeadlessClient(HeadlessClient):
     def __init__(self, host, port, neos_dir, config=None):
@@ -820,8 +949,32 @@ class RemoteHeadlessClient(HeadlessClient):
         super().__init__(neos_dir, config)
 
     def shutdown(self):
-        """Shuts down the headless client"""
+        """Shut down the headless client."""
         return self.connection.root.stop_headless_process(self.remote_pid)
+
+    def sigint(self):
+        """
+        Send a SIGINT to the headless client, same as pressing Ctrl+C.
+        """
+        return self.connection.root.send_signal_headless_process(
+            self.remote_pid, 2
+        )
+
+    def terminate(self):
+        """
+        Send a SIGTERM to the headless client, politely asking it to close.
+        """
+        return self.connection.root.send_signal_headless_process(
+            self.remote_pid, 15
+        )
+
+    def kill(self):
+        """
+        Send a SIGKILL to the headless client, immediately force closing it.
+        """
+        return self.connection.root.send_signal_headless_process(
+            self.remote_pid, 9
+        )
 
 class HeadlessCommand:
     """

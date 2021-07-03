@@ -1,5 +1,16 @@
 # Changelog
 
+## 2021-07-02
+* Overhauled the shutdown methods of the headless client:
+  * `shutdown()` now accepts an optional `timeout` keyword argument to specify how long to wait (in seconds) for the headless client to shut down before raising a `TimeoutExpired` exception. `wait` can also be set to `False` to make the call non-blocking, in which case `timeout` is ignored and returns immediately, but without an exit code.
+  * `sigint()` can be called to issue a `SIGINT` signal to the headless client, which should emulate pressing `Ctrl+C` in the console and cleanly shut down the headless client. This also accepts the `timeout` and `wait` keyword arguments mentioned above. Returns `-2`, if `wait` is `True`.
+  * `terminate()` can be called to issue a `SIGTERM` signal to the headless client. This also accepts the `timeout` and `wait` keyword arguments mentioned above. Returns `-15`, if `wait` is `True`.
+  * `kill()` can be called to issue a `SIGKILL` signal to the headless client. This also accepts the `timeout` and `wait` keyword arguments mentioned above. Returns `-9`, if `wait` is `True`.
+  * `wait_for_shutdown()` is a blocking call that will wait for the headless client to shut down. The `timeout` keyword argument can be specified to wait up to `timeout` seconds for the headless client to shut down before raising a `TimeoutExpired` exception. Returns the exit code. This can be used after using any of the above functions in non-blocking mode (when `wait` is `False`).
+* New methods exist for waiting on the headless client's "ready" state:
+  * **Breaking change:** `wait()` has been renamed to `wait_for_ready()` and now accepts a `timeout` keyword argument. Blocks and returns `True` when the headless client is ready to accept commands. If `timeout` is specified, the call will return `False` if the headless client does not enter a ready state within `timeout` seconds.
+  * `is_ready()` can be called to immediately check whether the headless client is ready or not without blocking. Returns either `True` if it is ready, or `False` if it is not ready.
+
 ## 2021-06-27
 * Defined constants for Neos' roles and access levels.
   * For user roles, they are: `ADMIN`, `BUILDER`, `MODERATOR`, `GUEST`, and `SPECTATOR`.

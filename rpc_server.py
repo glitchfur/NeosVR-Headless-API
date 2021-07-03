@@ -64,7 +64,8 @@ class HeadlessProcessService(Service):
         The id can be used to get the `HeadlessProcess` instance again at a
         later time with `get_headless_process()`.
         """
-        allowed_access = ("config", "neos_dir", "write", "readline", "wait")
+        allowed_access = ("neos_dir", "config", "write", "readline", "shutdown",
+            "sigint", "terminate", "kill", "wait")
         process = restricted(HeadlessProcess(*args, **kwargs), allowed_access)
         self.current_id += 1
         self.processes[self.current_id] = process
@@ -80,8 +81,35 @@ class HeadlessProcessService(Service):
         process list. Returns the exit code of the process.
         """
         process = self.processes[pid]
-        process.write("shutdown\n")
-        exit_code = process.wait()
+        exit_code = process.shutdown()
+        del(self.processes[pid])
+        logging.info(
+            "Headless process with ID %d terminated with return code %d." %
+            (pid, exit_code)
+        )
+        logging.info("Total processes running: %d" % len(self.processes))
+        return exit_code
+
+    def exposed_send_signal_headless_process(self, pid, sig):
+        """
+        Send a signal to the `HeadlessProcess` with the given `pid` and removes
+        it from the process list. `sig` is an integer which can be either
+        SIGINT (2), SIGTERM (15), or SIGKILL (9). If `sig` is not one of these
+        integers, `ValueError` will be raised. Returns the signal used to
+        terminate the process as a negative integer.
+        """
+        process = self.processes[pid]
+        if not sig in (2, 9, 15):
+            raise ValueError("Signal not allowed: %d" % sig)
+        if sig == 2:
+            func = process.sigint
+        elif sig == 9:
+            func = process.kill
+        elif sig == 15:
+            func = process.terminate
+        exit_code = func()
+        # TODO: The following code is identical to that of
+        # `exposed_stop_headless_process()`
         del(self.processes[pid])
         logging.info(
             "Headless process with ID %d terminated with return code %d." %
