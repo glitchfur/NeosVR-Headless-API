@@ -630,6 +630,7 @@ class HeadlessClient:
             user["present"] = True if user["present"] == "True" else False
             if user["fps"].is_integer():
                 user["fps"] = int(user["fps"])
+            user["silenced"] = True if user["silenced"] == "True" else False
             users.append(user)
 
         return users

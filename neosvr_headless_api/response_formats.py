@@ -24,7 +24,7 @@ WORLD_FORMAT = "[{:d}] {name}Users: {users:d}\tPresent: {present:d}\tAccessLevel
 # space in the format string, then `parse()` would fail entirely. This also
 # means in all other cases, valid IDs will have an extra space before them, but
 # that can be easily trimmed off.
-USER_FORMAT = "{name}\tID:{user_id}\tRole: {role}\tPresent: {present}\tPing: {ping:d} ms\tFPS: {fps:g}"
+USER_FORMAT = "{name}\tID:{user_id}\tRole: {role}\tPresent: {present}\tPing: {ping:d} ms\tFPS: {fps:g}\tSilenced: {silenced}"
 BAN_FORMAT = "[{:d}]\tUsername: {name}\tUserID: {user_id}\tMachineId: {machine_id}"
 
 # STATUS_NAME_FORMAT and STATUS_DESCRIPTION_FORMAT contain "SessionID:" and

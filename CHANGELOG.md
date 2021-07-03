@@ -10,6 +10,7 @@
 * New methods exist for waiting on the headless client's "ready" state:
   * **Breaking change:** `wait()` has been renamed to `wait_for_ready()` and now accepts a `timeout` keyword argument. Blocks and returns `True` when the headless client is ready to accept commands. If `timeout` is specified, the call will return `False` if the headless client does not enter a ready state within `timeout` seconds.
   * `is_ready()` can be called to immediately check whether the headless client is ready or not without blocking. Returns either `True` if it is ready, or `False` if it is not ready.
+* The `users()` function will now show whether the users in a session are silenced or not, which is a feature that was added in Neos version [2021.7.1.437](https://github.com/Neos-Metaverse/NeosPublic/issues/2517#issuecomment-871997486).
 
 ## 2021-06-27
 * Defined constants for Neos' roles and access levels.
