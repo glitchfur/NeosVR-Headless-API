@@ -1028,7 +1028,7 @@ class UnhandledError(Exception):
 class HeadlessNotReady(Exception):
     """
     Raised when a command is attempted to be executed before the headless
-    client has fully finished starting up. Use `wait()` to block until the
-    headless client is ready to accept commands.
+    client has fully finished starting up. Use `wait_for_ready()` to block until
+    the headless client is ready to accept commands.
     """
     pass
