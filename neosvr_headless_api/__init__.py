@@ -92,10 +92,17 @@ class HeadlessProcess:
         """Write `data` to the process's stdin."""
         self._stdin_queue.put(data)
 
-    def readline(self):
-        """Read a line from the process's stdout."""
-        res = self._stdout_queue.get()
-        self._stdout_queue.task_done()
+    def readline(self, timeout=None):
+        """
+        Read a line from the process's stdout. Optionally wait up to `timeout`
+        seconds and if there is no line to be read, raise `CommandTimeout`.
+        """
+        try:
+            res = self._stdout_queue.get(timeout=timeout)
+            self._stdout_queue.task_done()
+        except Empty:
+            raise CommandTimeout(
+                "Command didn't complete within %d seconds" % timeout)
         return res
 
     def shutdown(self, timeout=None, wait=True):
@@ -237,11 +244,16 @@ class HeadlessClient:
             # `almost_ready` is set to True when at least one world is
             # running. Only then do we look for the ">" character in the
             # prompt, to prevent false positives.
-            # TODO: This loop will never end if there are no worlds enabled
-            # in the configuration file.
             almost_ready = False
             while True:
-                ln = self.process.readline()
+                # If the timeout is hit, assume that startup has halted due to
+                # some sort of error, ex. network issues or incorrect Neos
+                # password. Don't bother collecting other startup info, and
+                # never mark the headless client as ready.
+                try:
+                    ln = self.process.readline(timeout=20)
+                except CommandTimeout:
+                    break
                 self._check_startup_line(ln)
                 if ln.endswith(">") and almost_ready:
                     self.ready.set()
@@ -312,7 +324,13 @@ class HeadlessClient:
                 ]
 
                 while True:
-                    ln = self.process.readline()
+                    try:
+                        ln = self.process.readline(timeout=20)
+                    except CommandTimeout as e:
+                        # Recreate the exception to avoid rpyc proxying issues.
+                        hcmd.set_result(CommandTimeout(e.args[0]))
+                        execute_command = False
+                        break
                     if ln in errors:
                         # Pass the exception, caller is responsible for raising.
                         hcmd.set_result(NeosError(ln))
@@ -330,13 +348,26 @@ class HeadlessClient:
 
             # Execute the actual command here.
 
+            command_timeout = False
+
             self.process.write("%s\n" % hcmd.cmd)
             res = []
             while True:
-                ln = self.process.readline()
+                try:
+                    ln = self.process.readline(timeout=20)
+                except CommandTimeout as e:
+                    # Recreate the exception to avoid rpyc proxying issues.
+                    hcmd.set_result(CommandTimeout(e.args[0]))
+                    command_timeout = True
+                    break
                 if ln.endswith(">"):
                     break
                 res.append(ln)
+
+            if command_timeout:
+                self.command_queue.task_done()
+                continue
+
             hcmd.set_result(res)
             self.command_queue.task_done()
 
@@ -401,7 +432,7 @@ class HeadlessClient:
         # will return the result as soon as it is available.
         # See the `HeadlessCommand` class for more info.
         result = hcmd.result()
-        if isinstance(result, NeosError):
+        if isinstance(result, (NeosError, CommandTimeout)):
             raise result
         return result
 
@@ -942,7 +973,9 @@ class LocalHeadlessClient(HeadlessClient):
 class RemoteHeadlessClient(HeadlessClient):
     def __init__(self, host, port, neos_dir, config=None):
         # This import is here to effectively make `rpyc` an optional dependency.
-        from rpyc import connect
+        from rpyc import connect, core
+        _gec = core.vinegar._generic_exceptions_cache
+        _gec["neosvr_headless_api.CommandTimeout"] = CommandTimeout
         self.host, self.port = host, port
         self.connection = connect(host, port)
         self.remote_pid, self.process = \
@@ -1022,6 +1055,19 @@ class UnhandledError(Exception):
     an end user. If an error raises this exception that you feel should raise a
     `NeosError` exception instead, feel free to open an issue or submit a pull
     request to have it implemented.
+    """
+    pass
+
+class CommandTimeout(Exception):
+    """
+    Raised when a command takes too long to return any output. If this is raised
+    multiple times in a row, the headless client may be frozen.
+    NOTE: The headless client itself doesn't have a concept of "command
+    timeouts" so this exception is more so an indicator of the headless client
+    not responding. 20-25 seconds is the recommended timeout period. Commands do
+    take upwards of 10 seconds to complete sometimes when the headless client is
+    under heavy load, but any more than that and it should be assumed the
+    headless client is unresponsive and may not be recoverable.
     """
     pass
 

@@ -1,5 +1,8 @@
 # Changelog
 
+## 2021-07-09
+* Add `CommandTimeout` exception which is raised when a command takes too long to return any output.
+
 ## 2021-07-02
 * Overhauled the shutdown methods of the headless client:
   * `shutdown()` now accepts an optional `timeout` keyword argument to specify how long to wait (in seconds) for the headless client to shut down before raising a `TimeoutExpired` exception. `wait` can also be set to `False` to make the call non-blocking, in which case `timeout` is ignored and returns immediately, but without an exit code.
