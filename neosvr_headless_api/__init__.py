@@ -37,6 +37,9 @@ FRIENDS_OF_FRIENDS = "FriendsOfFriends"
 REGISTERED_USERS = "RegisteredUsers"
 ANYONE = "Anyone"
 
+# Maximum time to wait for RPC responses (in seconds)
+SYNC_REQUEST_TIMEOUT = 60
+
 class HeadlessProcess:
     """
     Handles direct control of the NeosVR headless client. This class is not
@@ -251,7 +254,7 @@ class HeadlessClient:
                 # password. Don't bother collecting other startup info, and
                 # never mark the headless client as ready.
                 try:
-                    ln = self.process.readline(timeout=20)
+                    ln = self.process.readline(timeout=30)
                 except CommandTimeout:
                     break
                 self._check_startup_line(ln)
@@ -325,7 +328,7 @@ class HeadlessClient:
 
                 while True:
                     try:
-                        ln = self.process.readline(timeout=20)
+                        ln = self.process.readline(timeout=30)
                     except CommandTimeout as e:
                         # Recreate the exception to avoid rpyc proxying issues.
                         hcmd.set_result(CommandTimeout(e.args[0]))
@@ -354,7 +357,7 @@ class HeadlessClient:
             res = []
             while True:
                 try:
-                    ln = self.process.readline(timeout=20)
+                    ln = self.process.readline(timeout=30)
                 except CommandTimeout as e:
                     # Recreate the exception to avoid rpyc proxying issues.
                     hcmd.set_result(CommandTimeout(e.args[0]))
@@ -977,7 +980,8 @@ class RemoteHeadlessClient(HeadlessClient):
         _gec = core.vinegar._generic_exceptions_cache
         _gec["neosvr_headless_api.CommandTimeout"] = CommandTimeout
         self.host, self.port = host, port
-        self.connection = connect(host, port)
+        self.connection = connect(host, port,
+            config={"sync_request_timeout": SYNC_REQUEST_TIMEOUT})
         self.remote_pid, self.process = \
             self.connection.root.start_headless_process(neos_dir, config)
         super().__init__(neos_dir, config)

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2021-07-10
+* Relaxed timeouts for commands and RPC connections:
+  * Commands will now time out after 30 seconds. (Changed from 20 seconds.)
+  * RPC connections now have a 60 second timeout. (Changed from 30 seconds.)
+
 ## 2021-07-09
 * Add `CommandTimeout` exception which is raised when a command takes too long to return any output.
 
