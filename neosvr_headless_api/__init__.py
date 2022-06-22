@@ -40,181 +40,6 @@ ANYONE = "Anyone"
 # Maximum time to wait for RPC responses (in seconds)
 SYNC_REQUEST_TIMEOUT = 60
 
-class HeadlessProcess:
-    """
-    Handles direct control of the NeosVR headless client. This class is not
-    intended to be used directly. `HeadlessClient` should be used instead.
-    """
-    def __init__(self, neos_dir, config=None):
-        self.neos_dir = neos_dir
-
-        # If no configuration file is specified, then Neos will load it from its
-        # default location at "Config/Config.json" (relative to the directory
-        # Neos is running from). However, if this file does not exist, Neos will
-        # run using all default values without creating a configuration file.
-        # For the former case, `config` is set to the absolute path of this
-        # configuration file. For the latter, `config` is left at `None`.
-        self.args = ["mono", "Neos.exe"] # TODO: Windows doesn't use Mono.
-        if config:
-            if not path.exists(config):
-                raise FileNotFoundError(
-                    "Configuration file not found: \"%s\"" % config)
-            self.config = config
-            self.args.extend(["--config", config])
-        else:
-            dft_loc = path.join(neos_dir, "Config", "Config.json")
-            if path.exists(dft_loc):
-                self.config = dft_loc
-            else:
-                self.config = None
-
-        self.process = Popen(self.args,
-            stdin=PIPE,
-            stdout=PIPE,
-            stderr=PIPE,
-            bufsize=0, # Unbuffered
-            cwd=self.neos_dir
-        )
-        self.running = True
-
-        self._stdin_queue = Queue()
-        self._stdout_queue = Queue()
-        self._stderr_queue = Queue()
-
-        self._threads = [
-            Thread(target=self._stdin_writer),
-            Thread(target=self._stdout_reader),
-            Thread(target=self._stderr_reader)
-        ]
-
-        for thread in self._threads:
-            thread.daemon = True # TODO: Does this need to be a daemon thread?
-            thread.start()
-
-    def write(self, data):
-        """Write `data` to the process's stdin."""
-        self._stdin_queue.put(data)
-
-    def readline(self, timeout=None):
-        """
-        Read a line from the process's stdout. Optionally wait up to `timeout`
-        seconds and if there is no line to be read, raise `CommandTimeout`.
-        """
-        try:
-            res = self._stdout_queue.get(timeout=timeout)
-            self._stdout_queue.task_done()
-        except Empty:
-            raise CommandTimeout(
-                "Command didn't complete within %d seconds" % timeout)
-        return res
-
-    def shutdown(self, timeout=None, wait=True):
-        """
-        Shut down the headless client by sending the "shutdown" command. If
-        `wait` is `True`, block until the process exits and returns the exit
-        code. You can specify `timeout` to wait up to a number of seconds for
-        the process to exit, else `TimeoutExpired` will be raised. `timeout` has
-        no effect if `wait` is `False`.
-        """
-        self.write("shutdown\n")
-        if wait:
-            return self.wait(timeout=timeout)
-
-    def sigint(self, timeout=None, wait=True):
-        """
-        Send a SIGINT (2) signal to the process, i.e. Ctrl+C.
-        If `wait` is `True` and `timeout` is not `None`, block and wait up to
-        `timeout` seconds for the process to exit and return the exit code,
-        otherwise `TimeoutExpired` will be raised. `timeout` has no effect if
-        `wait` is `False`.
-        """
-        self.process.send_signal(2)
-        if wait:
-            return self.wait(timeout=timeout)
-
-    def terminate(self, timeout=None, wait=True):
-        """
-        Send a SIGTERM (15) signal to the process.
-        If `wait` is `True` and `timeout` is not `None`, block and wait up to
-        `timeout` seconds for the process to exit and return the exit code,
-        otherwise `TimeoutExpired` will be raised. `timeout` has no effect if
-        `wait` is `False`.
-        """
-        self.process.terminate()
-        if wait:
-            return self.wait(timeout=timeout)
-
-    def kill(self, timeout=None, wait=True):
-        """
-        Send a SIGKILL (9) signal to the process.
-        If `wait` is `True` and `timeout` is not `None`, block and wait up to
-        `timeout` seconds for the process to exit and return the exit code,
-        otherwise `TimeoutExpired` will be raised. `timeout` has no effect if
-        `wait` is `False`.
-        """
-        # NOTE: It's probably not be necessary to "wait" for a SIGKILL since it
-        # should be immediate, but it's here anyway for consistency.
-        self.process.kill()
-        if wait:
-            return self.wait(timeout=timeout)
-
-    def wait(self, timeout=None):
-        """
-        Alias for `self.process.wait()`
-        Block until the process exits and return the exit code. If `timeout` is
-        not `None`, wait up to `timeout` seconds, otherwise `TimeoutExpired`
-        will be raised.
-        """
-        return self.process.wait(timeout=timeout)
-
-    def _stdin_writer(self):
-        while True:
-            try:
-                cmd = self._stdin_queue.get(timeout=.5)
-            except Empty:
-                if self.running:
-                    continue
-                else:
-                    break
-            self.process.stdin.write(cmd.encode("utf8"))
-            self._stdin_queue.task_done()
-
-    def _stdout_reader(self):
-        line_buffer = ""
-        while True:
-            data = self.process.stdout.read(4096).decode("utf8")
-            if data == "":
-                # Stream has ended, trigger shutdown of other threads.
-                self.running = False
-                break
-            lines = (line_buffer + data).split("\n")
-            line_buffer = ""
-
-            if lines[-1] == "":
-                lines.pop()
-            elif not lines[-1].endswith(">"):
-                line_buffer = lines.pop()
-
-            for ln in lines:
-                self._stdout_queue.put(ln)
-
-    def _stderr_reader(self):
-        line_buffer = ""
-        while True:
-            data = self.process.stderr.read(4096).decode("utf8")
-            if data == "":
-                break
-            lines = (line_buffer + data).split("\n")
-            line_buffer = ""
-
-            if lines[-1] == "":
-                lines.pop()
-            else:
-                line_buffer = lines.pop()
-
-            for ln in lines:
-                self._stderr_queue.put(ln)
-
 class HeadlessClient:
     """
     High-level API to the NeosVR headless client. Functions exist for most
@@ -1013,6 +838,181 @@ class RemoteHeadlessClient(HeadlessClient):
         return self.connection.root.send_signal_headless_process(
             self.remote_pid, 9
         )
+
+class HeadlessProcess:
+    """
+    Handles direct control of the NeosVR headless client. This class is not
+    intended to be used directly. `HeadlessClient` should be used instead.
+    """
+    def __init__(self, neos_dir, config=None):
+        self.neos_dir = neos_dir
+
+        # If no configuration file is specified, then Neos will load it from its
+        # default location at "Config/Config.json" (relative to the directory
+        # Neos is running from). However, if this file does not exist, Neos will
+        # run using all default values without creating a configuration file.
+        # For the former case, `config` is set to the absolute path of this
+        # configuration file. For the latter, `config` is left at `None`.
+        self.args = ["mono", "Neos.exe"] # TODO: Windows doesn't use Mono.
+        if config:
+            if not path.exists(config):
+                raise FileNotFoundError(
+                    "Configuration file not found: \"%s\"" % config)
+            self.config = config
+            self.args.extend(["--config", config])
+        else:
+            dft_loc = path.join(neos_dir, "Config", "Config.json")
+            if path.exists(dft_loc):
+                self.config = dft_loc
+            else:
+                self.config = None
+
+        self.process = Popen(self.args,
+            stdin=PIPE,
+            stdout=PIPE,
+            stderr=PIPE,
+            bufsize=0, # Unbuffered
+            cwd=self.neos_dir
+        )
+        self.running = True
+
+        self._stdin_queue = Queue()
+        self._stdout_queue = Queue()
+        self._stderr_queue = Queue()
+
+        self._threads = [
+            Thread(target=self._stdin_writer),
+            Thread(target=self._stdout_reader),
+            Thread(target=self._stderr_reader)
+        ]
+
+        for thread in self._threads:
+            thread.daemon = True # TODO: Does this need to be a daemon thread?
+            thread.start()
+
+    def write(self, data):
+        """Write `data` to the process's stdin."""
+        self._stdin_queue.put(data)
+
+    def readline(self, timeout=None):
+        """
+        Read a line from the process's stdout. Optionally wait up to `timeout`
+        seconds and if there is no line to be read, raise `CommandTimeout`.
+        """
+        try:
+            res = self._stdout_queue.get(timeout=timeout)
+            self._stdout_queue.task_done()
+        except Empty:
+            raise CommandTimeout(
+                "Command didn't complete within %d seconds" % timeout)
+        return res
+
+    def shutdown(self, timeout=None, wait=True):
+        """
+        Shut down the headless client by sending the "shutdown" command. If
+        `wait` is `True`, block until the process exits and returns the exit
+        code. You can specify `timeout` to wait up to a number of seconds for
+        the process to exit, else `TimeoutExpired` will be raised. `timeout` has
+        no effect if `wait` is `False`.
+        """
+        self.write("shutdown\n")
+        if wait:
+            return self.wait(timeout=timeout)
+
+    def sigint(self, timeout=None, wait=True):
+        """
+        Send a SIGINT (2) signal to the process, i.e. Ctrl+C.
+        If `wait` is `True` and `timeout` is not `None`, block and wait up to
+        `timeout` seconds for the process to exit and return the exit code,
+        otherwise `TimeoutExpired` will be raised. `timeout` has no effect if
+        `wait` is `False`.
+        """
+        self.process.send_signal(2)
+        if wait:
+            return self.wait(timeout=timeout)
+
+    def terminate(self, timeout=None, wait=True):
+        """
+        Send a SIGTERM (15) signal to the process.
+        If `wait` is `True` and `timeout` is not `None`, block and wait up to
+        `timeout` seconds for the process to exit and return the exit code,
+        otherwise `TimeoutExpired` will be raised. `timeout` has no effect if
+        `wait` is `False`.
+        """
+        self.process.terminate()
+        if wait:
+            return self.wait(timeout=timeout)
+
+    def kill(self, timeout=None, wait=True):
+        """
+        Send a SIGKILL (9) signal to the process.
+        If `wait` is `True` and `timeout` is not `None`, block and wait up to
+        `timeout` seconds for the process to exit and return the exit code,
+        otherwise `TimeoutExpired` will be raised. `timeout` has no effect if
+        `wait` is `False`.
+        """
+        # NOTE: It's probably not be necessary to "wait" for a SIGKILL since it
+        # should be immediate, but it's here anyway for consistency.
+        self.process.kill()
+        if wait:
+            return self.wait(timeout=timeout)
+
+    def wait(self, timeout=None):
+        """
+        Alias for `self.process.wait()`
+        Block until the process exits and return the exit code. If `timeout` is
+        not `None`, wait up to `timeout` seconds, otherwise `TimeoutExpired`
+        will be raised.
+        """
+        return self.process.wait(timeout=timeout)
+
+    def _stdin_writer(self):
+        while True:
+            try:
+                cmd = self._stdin_queue.get(timeout=.5)
+            except Empty:
+                if self.running:
+                    continue
+                else:
+                    break
+            self.process.stdin.write(cmd.encode("utf8"))
+            self._stdin_queue.task_done()
+
+    def _stdout_reader(self):
+        line_buffer = ""
+        while True:
+            data = self.process.stdout.read(4096).decode("utf8")
+            if data == "":
+                # Stream has ended, trigger shutdown of other threads.
+                self.running = False
+                break
+            lines = (line_buffer + data).split("\n")
+            line_buffer = ""
+
+            if lines[-1] == "":
+                lines.pop()
+            elif not lines[-1].endswith(">"):
+                line_buffer = lines.pop()
+
+            for ln in lines:
+                self._stdout_queue.put(ln)
+
+    def _stderr_reader(self):
+        line_buffer = ""
+        while True:
+            data = self.process.stderr.read(4096).decode("utf8")
+            if data == "":
+                break
+            lines = (line_buffer + data).split("\n")
+            line_buffer = ""
+
+            if lines[-1] == "":
+                lines.pop()
+            else:
+                line_buffer = lines.pop()
+
+            for ln in lines:
+                self._stderr_queue.put(ln)
 
 class HeadlessCommand:
     """
