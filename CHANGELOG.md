@@ -1,5 +1,9 @@
 # Changelog
 
+## 2022-06-22
+
+* Add `rpyc` and `pdoc` packages to requirements.txt, for the RPC server and generating technical documentation respectively.
+
 ## 2021-07-10
 * Relaxed timeouts for commands and RPC connections:
   * Commands will now time out after 30 seconds. (Changed from 20 seconds.)
