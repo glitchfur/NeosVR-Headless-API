@@ -14,6 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+"""
+**NeosVR-Headless-API** is a Python wrapper and API for the NeosVR headless client.
+The project can be found on [GitHub](https://github.com/glitchfur/NeosVR-Headless-API)
+and the [wiki](https://github.com/glitchfur/NeosVR-Headless-API/wiki) can help you
+get started in the right direction.
+"""
+
 from threading import Thread, Event
 from queue import Queue, Empty
 from subprocess import Popen, PIPE
