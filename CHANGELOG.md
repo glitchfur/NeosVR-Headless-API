@@ -4,6 +4,7 @@
 
 * Add `rpyc` and `pdoc` packages to requirements.txt, for the RPC server and generating technical documentation respectively.
 * Overhaul README with an example of usage.
+* Greatly improve source documentation with more detailed docstrings and type annotations.
 
 ## 2021-07-10
 * Relaxed timeouts for commands and RPC connections:

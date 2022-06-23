@@ -18,6 +18,8 @@ from subprocess import Popen, PIPE
 from concurrent.futures import ThreadPoolExecutor
 from os import path
 
+from typing import Union
+
 from parse import parse, findall
 
 from .response_formats import *
@@ -42,10 +44,17 @@ SYNC_REQUEST_TIMEOUT = 60
 
 class HeadlessClient:
     """
-    High-level API to the NeosVR headless client. Functions exist for most
-    commands and the output will be parsed and returned as Python objects.
+    High-level API to the NeosVR headless client. This class shouldn't be
+    instantiated directly. You'll want to use the `LocalHeadlessClient` or
+    `RemoteHeadlessClient` subclasses.
     """
-    def __init__(self, neos_dir, config=None):
+    def __init__(self, neos_dir: str, config: str = None):
+        """
+        Start a headless client using `Neos.exe` in `neos_dir` using `config`
+        as the configuration file, if provided. `LocalHeadlessClient` or
+        `RemoteHeadlessClient` decides how the process is attached, but
+        everything else is the same.
+        """
         try:
             self.process
         except AttributeError:
@@ -199,14 +208,14 @@ class HeadlessClient:
             hcmd.set_result(res)
             self.command_queue.task_done()
 
-    def is_ready(self):
+    def is_ready(self) -> bool:
         """
         Returns `True` if the headless client is ready to accept commands.
         Otherwise returns `False`. Alias for `self.ready.is_set()`
         """
         return self.ready.is_set()
 
-    def wait_for_ready(self, timeout=None):
+    def wait_for_ready(self, timeout: int = None) -> bool:
         """
         Block until the headless client is ready to accept commands. Returns
         `True` when ready. If `timeout` is specified and the headless client
@@ -214,7 +223,7 @@ class HeadlessClient:
         """
         return self.ready.wait(timeout=timeout)
 
-    def wait_for_shutdown(self, timeout=None):
+    def wait_for_shutdown(self, timeout: int = None) -> int:
         """
         Block until the headless client has shut down. Returns the exit code
         when the client has exited. If `timeout` is specified and the headless
@@ -250,8 +259,13 @@ class HeadlessClient:
         """
         pass
 
-    def send_command(self, cmd, world=None):
-        """Sends a command to the console, returns the output."""
+    def send_command(self, cmd: str, world: Union[str, int] = None) -> list:
+        """
+        Sends a command to the console, returns the output as a `list`. Each
+        item of the `list` is a single line of command output, exactly as returned
+        by the headless client. You can use this method to run commands that
+        haven't been added to the API yet.
+        """
         if not self.is_ready():
             raise HeadlessNotReady("The headless client is still starting up.")
         hcmd = HeadlessCommand(cmd, world=world)
@@ -278,8 +292,12 @@ class HeadlessClient:
 
     # TODO: Implement `saveConfig` here
 
-    def login(self, username_or_email, password):
-        """Log into a Neos account"""
+    def login(self, username_or_email: str, password: str) -> str:
+        """
+        Log into a Neos account.
+        
+        Returns the success message, or raises `NeosError` if the login failed.
+        """
         cmd = self.send_command("login \"%s\" \"%s\"" %
             (username_or_email, password))
         errors = [
@@ -293,8 +311,12 @@ class HeadlessClient:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 
-    def logout(self):
-        """Log out from the current Neos account"""
+    def logout(self) -> str:
+        """
+        Log out from the current Neos account.
+        
+        Returns the success message, or raises `NeosError` if already logged out.
+        """
         cmd = self.send_command("logout")
         for ln in cmd:
             if ln == "Logged out!":
@@ -303,8 +325,12 @@ class HeadlessClient:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 
-    def message(self, friend_name, message):
-        """Message user in friends list"""
+    def message(self, friend_name: str, message: str) -> str:
+        """
+        Message user in friends list.
+        
+        Returns the success message, or raises `NeosError` if there was a problem.
+        """
         cmd = self.send_command(
             "message \"%s\" \"%s\"" % (friend_name, message))
         errors = [
@@ -318,8 +344,14 @@ class HeadlessClient:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 
-    def invite(self, friend_name, world=None):
-        """Invite a friend to the currently focused world"""
+    def invite(self, friend_name: str, world: Union[str, int] = None) -> str:
+        """
+        Invite a friend to the currently focused world. If `world` is specified,
+        they are invited to that world instead. `world` can be a world index,
+        world name, or session ID.
+
+        Returns the success message or raises `NeosError` if there was a problem.
+        """
         cmd = self.send_command("invite \"%s\"" % friend_name, world=world)
         errors = [
             "No friend with this username",
@@ -335,8 +367,23 @@ class HeadlessClient:
     # TODO: Implement `friendRequests` here
     # TODO: Implement `acceptFriendRequest` here
 
-    def worlds(self):
-        """Lists all active worlds"""
+    def worlds(self) -> list[dict]:
+        """
+        Lists all active worlds. Returns a `list` of `dict`.
+
+        Each `dict` corresponds to a world with the following keys:
+
+        - **name**: `str`
+          - Name of the world
+        - **users**: `int`
+          - How many users are *connected* to the world
+        - **present**: `int`
+          - How many users are *present* in the world
+        - **access_level**: `str`
+          - The access level setting of the world. Ex. "Anyone" or "Friends"
+        - **max_users**: `int`
+          - The maximum number of users allowed to connect
+        """
         cmd = self.send_command("worlds")
 
         # World names can contain newline characters, so we have to put the
@@ -350,8 +397,12 @@ class HeadlessClient:
 
         return worlds
 
-    def focus(self, world_name_or_number):
-        """Focus world"""
+    def focus(self, world_name_or_number: Union[str, int]):
+        """
+        Switch focus to another world.
+        
+        Returns nothing on success, or raises `NeosError` on error.
+        """
         # This command prints nothing on a successful switch.
         try:
             world_number = int(world_name_or_number)
@@ -369,8 +420,40 @@ class HeadlessClient:
     # TODO: Implement `startWorldURL` here
     # TODO: Implement `startWorldTemplate` here
 
-    def status(self, world=None):
-        """Shows the status of the current world"""
+    def status(self, world: Union[str, int] = None) -> dict:
+        """
+        Shows the status of the current world, or `world` if it is specified.
+        `world` can be a world index, world name, or session ID.
+
+        Returns a `dict` with the following keys:
+
+        - **name**: `str`
+          - The name of the session or world
+        - **session_id**: `str`
+          - The session ID, including the `S-` prefix
+        - **current_users**: `int`
+          - How many users are *connected* to the session
+        - **present_users**: `int`
+          - How many users are *present* in the session
+        - **max_users**: `int`
+          - The maximum number of users allowed to connect
+        - **uptime**: `str`
+          - Session uptime as returned by the headless client  
+            Ex. `00:42:54.4241170`
+        - **access_level**: `str`
+          - The access level setting of the session.  
+            Ex. "Anyone" or "Friends"
+        - **hidden_from_listing**: `bool`
+          - Whether this session is displayed in the public world listing
+        - **mobile_friendly**: `bool`
+          - Whether this session is marked as being "mobile friendly"
+        - **description**: `str`
+          - A description of the session or world
+        - **tags**: `list[str]`
+          - A list of tags for the current world
+        - **users**: `list[str]`
+          - A list of usernames connected to the session (**without** the `U-` prefix)
+        """
         cmd = self.send_command("status", world=world)
 
         format_status_mapping = [
@@ -449,16 +532,24 @@ class HeadlessClient:
 
         return status
 
-    def session_url(self, world=None):
-        """Prints the URL of the current session"""
+    def session_url(self, world: Union[str, int] = None) -> str:
+        """
+        Returns the URL of the current session or specified `world`.
+
+        `world` can be a world index, world name, or session ID.
+        """
         cmd = self.send_command("sessionurl", world=world)
         for ln in cmd:
             if ln.startswith("http"):
                 return ln
         raise UnhandledError("\n".join(cmd))
 
-    def session_id(self, world=None):
-        """Prints the ID of the current session"""
+    def session_id(self, world: Union[str, int] = None) -> str:
+        """
+        Returns the ID of the current session or specified `world`.
+
+        `world` can be a world index, world name, or session ID.
+        """
         cmd = self.send_command("sessionid", world=world)
         for ln in cmd:
             if ln.startswith("S-"):
@@ -468,8 +559,32 @@ class HeadlessClient:
     # `copySessionURL` is not supported.
     # `copySessionID` is not supported.
 
-    def users(self, world=None):
-        """Lists all users in the world"""
+    def users(self, world: Union[str, int] = None) -> list[dict]:
+        """
+        Lists all users in the current world, or `world` if specified.
+        `world` can be a world index, world name, or session ID. 
+        Returns a `list` of `dict`.
+
+        The user listing includes the headless user hosting the session.
+
+        Each `dict` corresponds to a user with the following keys:
+
+        - **name**: `str`
+          - The name of the user
+        - **user_id**: `str` or None
+          - The user ID of the user
+          - There is a special case for the headless user. Its user ID is always `None`.
+        - **role**: `str`
+          - The current role or permission level of the user. Ex. "Admin" or "Builder"
+        - **present**: `bool`
+          - Whether the user is present in the world
+        - **ping**: `int`
+          - The user's current ping, in milliseconds
+        - **fps**: `float`
+          - The user's current FPS
+        - **silenced**: `bool`
+          - Whether the user is currently silenced
+        """
         cmd = self.send_command("users", world=world)
 
         users = []
@@ -494,13 +609,25 @@ class HeadlessClient:
 
         return users
 
-    def close(self, world=None):
-        """Closes the currently focused world"""
+    def close(self, world: Union[str, int] = None):
+        """
+        Closes the currently focused world, or `world` if it is given.
+        `world` can be a world index, world name, or session ID.
+
+        Returns nothing on success.
+        """
         # This command doesn't print anything, so there's nothing to return.
         self.send_command("close", world=world)
 
-    def save(self, world=None):
-        """Saves the currently focused world"""
+    def save(self, world: Union[str, int] = None) -> str:
+        """
+        Saves the currently focused world, or `world` if it is given.
+        `world` can be a world index, world name, or session ID.
+
+        Returns the success message.
+
+        **TODO:** Needs to be tested with cloud saved worlds.
+        """
         # TODO: See if this still works if world is saved to cloud.
         cmd = self.send_command("save", world=world)
         for ln in cmd:
@@ -508,11 +635,12 @@ class HeadlessClient:
                 return ln
         raise UnhandledError("\n".join(cmd))
 
-    def restart(self, world=None):
+    def restart(self, world: Union[str, int] = None):
         """
-        Restarts the current world
+        Restarts the current world, or `world` if it is given.
+        `world` can be a world index, world name, or session ID. 
 
-        NOTE: This is currently not implemented due to a bug in the headless
+        **NOTE:** This is currently not implemented due to a bug in the headless
         client. Calling this function will raise an exception. For info, see:
         https://github.com/Neos-Metaverse/NeosPublic/issues/1841
         """
@@ -522,8 +650,13 @@ class HeadlessClient:
             "See https://github.com/Neos-Metaverse/NeosPublic/issues/1841 "
             "for more information.")
 
-    def kick(self, username, world=None):
-        """Kicks given user from the session"""
+    def kick(self, username: str, world: Union[str, int] = None) -> str:
+        """
+        Kicks given user from the session, or from `world` if it is specified.
+        `world` can be a world index, world name, or session ID.
+
+        Returns the success message, or raises `NeosError` if the user wasn't found.
+        """
         cmd = self.send_command("kick \"%s\"" % username, world=world)
         for ln in cmd:
             if ln.endswith("kicked!"):
@@ -532,8 +665,13 @@ class HeadlessClient:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 
-    def silence(self, username, world=None):
-        """Silences given user in the session"""
+    def silence(self, username: str, world: Union[str, int] = None) -> str:
+        """
+        Silences given user in the session, or from `world` if it is specified.
+        `world` can be a world index, world name, or session ID.
+
+        Returns the success message, or raises `NeosError` if the user wasn't found.
+        """
         cmd = self.send_command("silence \"%s\"" % username, world=world)
         for ln in cmd:
             if ln.endswith("silenced!"):
@@ -542,8 +680,13 @@ class HeadlessClient:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 
-    def unsilence(self, username, world=None):
-        """Removes silence from given user in the session"""
+    def unsilence(self, username: str, world: Union[str, int] = None) -> str:
+        """
+        Removes silence from given user in the session, or from `world` if it is specified.
+        `world` can be a world index, world name, or session ID.
+
+        Returns the success message, or raises `NeosError` if the user wasn't found.
+        """
         cmd = self.send_command("unsilence \"%s\"" % username, world=world)
         for ln in cmd:
             if ln.endswith("unsilenced!"):
@@ -552,8 +695,14 @@ class HeadlessClient:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 
-    def ban(self, username, world=None):
-        """Bans the user from all sessions hosted by this server"""
+    def ban(self, username: str, world: Union[str, int] = None) -> str:
+        """
+        Bans the user in this session (or in `world` if specified) from all sessions
+        hosted by this server, then kicks them. `world` can be a world index, world name,
+        or session ID.
+
+        Returns the success message, or raises `NeosError` if the user wasn't found.
+        """
         cmd = self.send_command("ban \"%s\"" % username, world=world)
         for ln in cmd:
             if ln.endswith("banned!"):
@@ -562,8 +711,12 @@ class HeadlessClient:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 
-    def unban(self, username):
-        """Removes ban for user with given username"""
+    def unban(self, username: str) -> str:
+        """
+        Removes ban for user with given username.
+
+        Returns the success message, or raises `NeosError` if the user wasn't found.
+        """
         cmd = self.send_command("unban \"%s\"" % username)
         for ln in cmd:
             if ln == "Ban removed!":
@@ -572,8 +725,20 @@ class HeadlessClient:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 
-    def list_bans(self):
-        """Lists all active bans"""
+    def list_bans(self) -> list[dict]:
+        """
+        Lists all active bans. Returns a `list` of `dict`.
+
+        Each `dict` corresponds to a banned user and has the following keys:
+
+        - **name**: `str`
+          - The name of the banned user
+        - **user_id**: `str`
+          - The user ID of the banned user
+        - **machine_id**: `str`
+          - The machine ID of the banned user, if applicable
+          - This value may be "N/A" if the machine ID was not known at the time of the ban.
+        """
         cmd = self.send_command("listbans")
         bans = []
         for ln in cmd:
@@ -583,10 +748,11 @@ class HeadlessClient:
             bans.append(banned.named)
         return bans
 
-    def ban_by_name(self, neos_username):
+    def ban_by_name(self, neos_username: str) -> str:
         """
-        Bans user with given Neos username from
-        all sessions hosted by this server
+        Bans user with given Neos username from all sessions hosted by this server.
+
+        Returns the success message, or raises `NeosError` if there was a problem.
         """
         cmd = self.send_command("banbyname \"%s\"" % neos_username)
         errors = ["User not found", "Already banned"]
@@ -597,10 +763,11 @@ class HeadlessClient:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 
-    def unban_by_name(self, neos_username):
+    def unban_by_name(self, neos_username: str) -> str:
         """
-        Unbans user with given Neos username from
-        all sessions hosted by this server
+        Unbans user with given Neos username from all sessions hosted by this server.
+
+        Returns the success message, or raises `NeosError` if the user wasn't found.
         """
         cmd = self.send_command("unbanbyname \"%s\"" % neos_username)
         for ln in cmd:
@@ -610,10 +777,11 @@ class HeadlessClient:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 
-    def ban_by_id(self, user_id):
+    def ban_by_id(self, user_id: str) -> str:
         """
-        Bans user with given Neos User ID from
-        all sessions hosted by this server
+        Bans user with given Neos User ID from all sessions hosted by this server.
+
+        Returns the success message, or raises `NeosError` if there was a problem.
         """
         cmd = self.send_command("banbyid \"%s\"" % user_id)
         errors = ["User not found", "Already banned"]
@@ -624,10 +792,11 @@ class HeadlessClient:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 
-    def unban_by_id(self, user_id):
+    def unban_by_id(self, user_id: str) -> str:
         """
-        Unbans user with given Neos User ID from
-        all sessions hosted by this server
+        Unbans user with given Neos User ID from all sessions hosted by this server.
+
+        Returns the success message, or raises `NeosError` if the user wasn't found.
         """
         cmd = self.send_command("unbanbyid \"%s\"" % user_id)
         for ln in cmd:
@@ -637,8 +806,13 @@ class HeadlessClient:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 
-    def respawn(self, username, world=None):
-        """Respawns given user"""
+    def respawn(self, username: str, world: Union[str, int] = None) -> str:
+        """
+        Respawns given user in the current world, or `world` if it is given.
+        `world` can be a world index, world name, or session ID.
+
+        Returns the success message, or raises `NeosError` if the user wasn't found.
+        """
         cmd = self.send_command("respawn \"%s\"" % username, world=world)
         for ln in cmd:
             if ln.endswith("respawned!"):
@@ -647,8 +821,13 @@ class HeadlessClient:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 
-    def role(self, username, role, world=None):
-        """Assigns a role to given user"""
+    def role(self, username: str, role: str, world: Union[str, int] = None) -> str:
+        """
+        Assigns a role to given user in this world, or `world` if it is given.
+        `world` can be a world index, world name, or session ID.
+
+        Returns the success message, or raises `NeosError` if the user or role wasn't found.
+        """
         cmd = self.send_command(
             "role \"%s\" \"%s\"" % (username, role),
             world=world
@@ -662,13 +841,23 @@ class HeadlessClient:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 
-    def name(self, new_name, world=None):
-        """Sets a new world name"""
+    def name(self, new_name: str, world: Union[str, int] = None):
+        """
+        Sets a new world name for the current world, or `world` if it is given.
+        `world` can be a world index, world name, or session ID.
+
+        Returns nothing on success.
+        """
         # Command prints nothing on success. Nothing to return.
         self.send_command("name \"%s\"" % new_name, world=world)
 
-    def access_level(self, access_level_name, world=None):
-        """Sets a new world access level"""
+    def access_level(self, access_level_name: str, world: Union[str, int] = None) -> str:
+        """
+        Set the access level of the currently focused world, or `world` if it is given.
+        `world` can be a world index, world name, or session ID.
+
+        Returns the success message, or raises `NeosError` is the access level is invalid.
+        """
         cmd = self.send_command(
             "accesslevel \"%s\"" % access_level_name,
             world=world
@@ -680,8 +869,13 @@ class HeadlessClient:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 
-    def hide_from_listing(self, true_false, world=None):
-        """Sets whether the session should be hidden from listing or not"""
+    def hide_from_listing(self, true_false: bool, world: Union[str, int] = None) -> str:
+        """
+        Hide or unhide the currently focused world from public listing, or hide/unhide
+        `world` if it is given. `world` can be a world index, world name, or session ID.
+
+        Returns the success message, or raises `NeosError` if a non-boolean value is given.
+        """
         cmd = self.send_command(
             "hidefromlisting \"%s\"" % str(true_false).lower(),
             world=world
@@ -694,21 +888,36 @@ class HeadlessClient:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 
-    def description(self, new_description, world=None):
-        """Sets a new world description"""
+    def description(self, new_description: str, world: Union[str, int] = None):
+        """
+        Sets a new world description for the current world, or `world` if it is given.
+        `world` can be a world index, world name, or session ID.
+
+        Returns nothing on success.
+        """
         # Command prints nothing on success. Nothing to return.
         self.send_command("description \"%s\"" % new_description, world=world)
 
-    def max_users(self, max_users, world=None):
-        """Sets user limit"""
+    def max_users(self, max_users: int, world: Union[str, int] = None):
+        """
+        Sets user limit for the current world, or `world` if it is given.
+        `world` can be a world index, world name, or session ID.
+
+        Returns nothing on success, but raises `NeosError` if the number is out of range.
+        """
         # Nothing printed on command success.
         cmd = self.send_command("maxusers \"%s\"" % max_users, world=world)
         for ln in cmd:
             if ln == "Invalid number. Must be within 1 and 256":
                 raise NeosError(ln)
 
-    def away_kick_interval(self, interval_in_minutes, world=None):
-        """Sets the away kick interval"""
+    def away_kick_interval(self, interval_in_minutes: int, world: Union[str, int] = None):
+        """
+        Sets the away kick interval for the current world, or `world` if it is given.
+        `world` can be a world index, world name, or session ID.
+
+        Returns nothing on success, but raises `NeosError` if the number is invalid.
+        """
         # Nothing printed on command success.
         cmd = self.send_command(
             "awaykickinterval \"%s\"" % interval_in_minutes,
@@ -726,8 +935,8 @@ class HeadlessClient:
     # TODO: Implement `dynamicImpulseFloat` here
     # TODO: Implement `spawn` here
 
-    def gc(self):
-        """Forces full garbage collection"""
+    def gc(self) -> str:
+        """Forces full garbage collection. Returns the success message."""
         cmd = self.send_command("gc")
         for ln in cmd:
             if ln == "GC finished":
@@ -743,8 +952,12 @@ class HeadlessClient:
         """
         pass
 
-    def tick_rate(self, ticks_per_second):
-        """Sets the maximum simulation rate for the servers"""
+    def tick_rate(self, ticks_per_second: int) -> str:
+        """
+        Sets the maximum simulation rate for the servers.
+        
+        Returns the success message, or raises `NeosError` if the number is invalid.
+        """
         cmd = self.send_command("tickrate \"%s\"" % ticks_per_second)
         for ln in cmd:
             if ln == "Tick Rate Set!":
@@ -758,11 +971,27 @@ class HeadlessClient:
     # END HEADLESS CLIENT COMMANDS
 
 class LocalHeadlessClient(HeadlessClient):
-    def __init__(self, neos_dir, config=None):
+    """
+    Class representing a locally running headless client. Methods overridden
+    here relate to control of the headless client process itself. See
+    `HeadlessClient` for documentation on Neos console commands/functions.
+    """
+
+    def __init__(self, neos_dir: str, config: str = None):
+        """
+        Start a headless client on the local machine. `neos_dir` must be the
+        directory to the headless client software, containing `Neos.exe`. Make
+        sure that you have the correct version of Mono installed as well.
+
+        Optionally specify `config` as a path to a configuration JSON file for
+        the headless client to use. If this is not provided, Neos will use the
+        default one instead in `Config/Config.json`, or if that does not exist,
+        it will run with a completely default config.
+        """
         self.process = HeadlessProcess(neos_dir, config=config)
         super().__init__(neos_dir, config)
 
-    def shutdown(self, timeout=None, wait=True):
+    def shutdown(self, timeout: int = None, wait: bool = True) -> int:
         """
         Shut down the headless client using the "shutdown" command. If `wait` is
         `True`, wait up to `timeout` seconds for the process to exit and return
@@ -771,7 +1000,7 @@ class LocalHeadlessClient(HeadlessClient):
         """
         return self.process.shutdown(timeout=timeout, wait=wait)
 
-    def sigint(self, timeout=None, wait=True):
+    def sigint(self, timeout: int = None, wait: bool = True) -> int:
         """
         Send a SIGINT to the headless client, same as pressing Ctrl+C.
         If `wait` is `True`, block until the process exits and return the exit
@@ -780,7 +1009,7 @@ class LocalHeadlessClient(HeadlessClient):
         """
         return self.process.sigint(timeout=timeout, wait=wait)
 
-    def terminate(self, timeout=None, wait=True):
+    def terminate(self, timeout: int = None, wait: bool = True) -> int:
         """
         Send a SIGTERM to the headless client, politely asking it to close.
         If `wait` is `True`, block until the process exits and return the exit
@@ -789,7 +1018,7 @@ class LocalHeadlessClient(HeadlessClient):
         """
         return self.process.terminate(timeout=timeout, wait=wait)
 
-    def kill(self, timeout=None, wait=True):
+    def kill(self, timeout: int = None, wait: bool = True) -> int:
         """
         Send a SIGKILL to the headless client, immediately force closing it.
         If `wait` is `True`, block until the process exits and return the exit
@@ -799,7 +1028,15 @@ class LocalHeadlessClient(HeadlessClient):
         return self.process.kill(timeout=timeout, wait=wait)
 
 class RemoteHeadlessClient(HeadlessClient):
-    def __init__(self, host, port, neos_dir, config=None):
+    """
+    Start a headless client on a remote machine, by connecting to an RPC server
+    (included in this package as `rpc_server.py`) and interacting with a remote
+    headless client object as if it were local. When passing `neos_dir` and `config`
+    arguments, these directories and files **must** already exist on the destination
+    side. Files do not get copied over upon connecting.
+    """
+
+    def __init__(self, host: str, port: int, neos_dir: str, config: str = None):
         # This import is here to effectively make `rpyc` an optional dependency.
         from rpyc import connect, core
         _gec = core.vinegar._generic_exceptions_cache
@@ -811,11 +1048,11 @@ class RemoteHeadlessClient(HeadlessClient):
             self.connection.root.start_headless_process(neos_dir, config)
         super().__init__(neos_dir, config)
 
-    def shutdown(self):
+    def shutdown(self) -> int:
         """Shut down the headless client."""
         return self.connection.root.stop_headless_process(self.remote_pid)
 
-    def sigint(self):
+    def sigint(self) -> int:
         """
         Send a SIGINT to the headless client, same as pressing Ctrl+C.
         """
@@ -823,7 +1060,7 @@ class RemoteHeadlessClient(HeadlessClient):
             self.remote_pid, 2
         )
 
-    def terminate(self):
+    def terminate(self) -> int:
         """
         Send a SIGTERM to the headless client, politely asking it to close.
         """
@@ -831,7 +1068,7 @@ class RemoteHeadlessClient(HeadlessClient):
             self.remote_pid, 15
         )
 
-    def kill(self):
+    def kill(self) -> int:
         """
         Send a SIGKILL to the headless client, immediately force closing it.
         """
@@ -1082,3 +1319,13 @@ class HeadlessNotReady(Exception):
     the headless client is ready to accept commands.
     """
     pass
+
+__all__ = [
+    LocalHeadlessClient,
+    RemoteHeadlessClient,
+    HeadlessClient,
+    NeosError,
+    UnhandledError,
+    CommandTimeout,
+    HeadlessNotReady
+]
