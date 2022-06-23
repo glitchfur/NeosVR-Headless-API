@@ -25,9 +25,9 @@ from rpyc import Service, restricted
 from neosvr_headless_api import HeadlessProcess
 
 logging.basicConfig(
-    format="[%(asctime)s][%(levelname)s] %(message)s",
-    level=logging.INFO
+    format="[%(asctime)s][%(levelname)s] %(message)s", level=logging.INFO
 )
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -36,23 +36,24 @@ def main():
     parser.add_argument(
         "--host",
         default="127.0.0.1",
-        help="The host or IP address to bind to. (Default: 127.0.0.1)"
+        help="The host or IP address to bind to. (Default: 127.0.0.1)",
     )
     parser.add_argument(
-        "-p", "--port",
+        "-p",
+        "--port",
         type=int,
         default=16881,
-        help="The TCP port to bind to. (Default: 16881)"
+        help="The TCP port to bind to. (Default: 16881)",
     )
     args = parser.parse_args()
 
     from rpyc.utils.server import ThreadedServer
+
     server = ThreadedServer(
-        HeadlessProcessService(),
-        hostname=args.host,
-        port=args.port
+        HeadlessProcessService(), hostname=args.host, port=args.port
     )
     server.start()
+
 
 class HeadlessProcessService(Service):
     def __init__(self):
@@ -77,8 +78,17 @@ class HeadlessProcessService(Service):
         The id can be used to get the `HeadlessProcess` instance again at a
         later time with `get_headless_process()`.
         """
-        allowed_access = ("neos_dir", "config", "write", "readline", "shutdown",
-            "sigint", "terminate", "kill", "wait")
+        allowed_access = (
+            "neos_dir",
+            "config",
+            "write",
+            "readline",
+            "shutdown",
+            "sigint",
+            "terminate",
+            "kill",
+            "wait",
+        )
         process = restricted(HeadlessProcess(*args, **kwargs), allowed_access)
         self.current_id += 1
         self.processes[self.current_id] = process
@@ -95,10 +105,10 @@ class HeadlessProcessService(Service):
         """
         process = self.processes[pid]
         exit_code = process.shutdown()
-        del(self.processes[pid])
+        del self.processes[pid]
         logging.info(
-            "Headless process with ID %d terminated with return code %d." %
-            (pid, exit_code)
+            "Headless process with ID %d terminated with return code %d."
+            % (pid, exit_code)
         )
         logging.info("Total processes running: %d" % len(self.processes))
         return exit_code
@@ -123,10 +133,10 @@ class HeadlessProcessService(Service):
         exit_code = func()
         # TODO: The following code is identical to that of
         # `exposed_stop_headless_process()`
-        del(self.processes[pid])
+        del self.processes[pid]
         logging.info(
-            "Headless process with ID %d terminated with return code %d." %
-            (pid, exit_code)
+            "Headless process with ID %d terminated with return code %d."
+            % (pid, exit_code)
         )
         logging.info("Total processes running: %d" % len(self.processes))
         return exit_code
@@ -134,6 +144,7 @@ class HeadlessProcessService(Service):
     def exposed_get_headless_process(self, pid):
         """Returns an existing `HeadlessProcess` with the given `pid`."""
         return self.processes[pid]
+
 
 if __name__ == "__main__":
     main()
