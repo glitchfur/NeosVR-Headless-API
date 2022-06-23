@@ -4,6 +4,8 @@
 
 It aims to be easy to use by doing the heavy work of parsing command output for you and turns it into Python objects that you can use any way you like.
 
+The [wiki](https://github.com/glitchfur/NeosVR-Headless-API/wiki) has more information about NeosVR-Headless-API, or if you want to get started right away you can jump into [Getting started](https://github.com/glitchfur/NeosVR-Headless-API/wiki/Getting-started).
+
 ```python
 In [1]: from neosvr_headless_api import LocalHeadlessClient
 
@@ -30,5 +32,3 @@ Out[4]:
 In [5]: hc.shutdown()
 Out[5]: 0
 ```
-
-For more information, including how to get started with NeosVR-Headless-API, please visit the [wiki](https://github.com/glitchfur/NeosVR-Headless-API/wiki).
