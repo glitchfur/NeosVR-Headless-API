@@ -14,17 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# KNOWN BUGS:
-
-# World names that have any line ending with a ">" character will trip up the
-# prompt detector and cause undesirable behavior, particularly when running the
-# `status` command. Avoid using world names that fit this criteria.
-# Specifically, be careful when using text formatting in world names.
-
-# TODOS:
-
-# Check if no world is currently focused. Could affect all commands.
-
 from threading import Thread, Event
 from queue import Queue, Empty
 from subprocess import Popen, PIPE
