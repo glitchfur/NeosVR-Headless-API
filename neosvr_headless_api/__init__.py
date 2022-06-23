@@ -291,6 +291,13 @@ class HeadlessClient:
     # BEGIN HEADLESS CLIENT COMMANDS
 
     # TODO: Implement `saveConfig` here
+    def save_config(self, *args, **kwargs):
+        """
+        Not yet implemented
+        
+        Raises `NotImplementedError`
+        """
+        raise NotImplementedError("Not yet implemented")
 
     def login(self, username_or_email: str, password: str) -> str:
         """
@@ -365,7 +372,22 @@ class HeadlessClient:
         raise UnhandledError("\n".join(cmd))
 
     # TODO: Implement `friendRequests` here
+    def friend_requests(self, *args, **kwargs):
+        """
+        Not yet implemented
+        
+        Raises `NotImplementedError`
+        """
+        raise NotImplementedError("Not yet implemented")
+
     # TODO: Implement `acceptFriendRequest` here
+    def accept_friend_request(self, *args, **kwargs):
+        """
+        Not yet implemented
+        
+        Raises `NotImplementedError`
+        """
+        raise NotImplementedError("Not yet implemented")
 
     def worlds(self) -> list[dict]:
         """
@@ -418,7 +440,22 @@ class HeadlessClient:
                 raise NeosError(ln)
 
     # TODO: Implement `startWorldURL` here
+    def start_world_url(self, *args, **kwargs):
+        """
+        Not yet implemented
+        
+        Raises `NotImplementedError`
+        """
+        raise NotImplementedError("Not yet implemented")
+
     # TODO: Implement `startWorldTemplate` here
+    def start_world_template(self, *args, **kwargs):
+        """
+        Not yet implemented
+        
+        Raises `NotImplementedError`
+        """
+        raise NotImplementedError("Not yet implemented")
 
     def status(self, world: Union[str, int] = None) -> dict:
         """
@@ -928,12 +965,67 @@ class HeadlessClient:
                 raise NeosError(ln)
 
     # TODO: Implement `import` here
+    def import_(self, *args, **kwargs):
+        """
+        Not yet implemented
+        
+        Raises `NotImplementedError`
+        """
+        raise NotImplementedError("Not yet implemented")
+
     # TODO: Implement `importMinecraft` here
+    def import_minecraft(self, *args, **kwargs):
+        """
+        Not yet implemented
+        
+        Raises `NotImplementedError`
+        """
+        raise NotImplementedError("Not yet implemented")
+
     # TODO: Implement `dynamicImpulse` here
+    def dymanic_impulse(self, *args, **kwargs):
+        """
+        Not yet implemented
+        
+        Raises `NotImplementedError`
+        """
+        raise NotImplementedError("Not yet implemented")
+
     # TODO: Implement `dynamicImpulseString` here
+    def dynamic_impulse_string(self, *args, **kwargs):
+        """
+        Not yet implemented
+        
+        Raises `NotImplementedError`
+        """
+        raise NotImplementedError("Not yet implemented")
+
     # TODO: Implement `dynamicImpulseInt` here
+    def dynamic_impulse_int(self, *args, **kwargs):
+        """
+        Not yet implemented
+        
+        Raises `NotImplementedError`
+        """
+        raise NotImplementedError("Not yet implemented")
+
     # TODO: Implement `dynamicImpulseFloat` here
+    def dynamic_impulse_float(self, *args, **kwargs):
+        """
+        Not yet implemented
+        
+        Raises `NotImplementedError`
+        """
+        raise NotImplementedError("Not yet implemented")
+
     # TODO: Implement `spawn` here
+    def spawn(self, *args, **kwargs):
+        """
+        Not yet implemented
+        
+        Raises `NotImplementedError`
+        """
+        raise NotImplementedError("Not yet implemented")
 
     def gc(self) -> str:
         """Forces full garbage collection. Returns the success message."""
