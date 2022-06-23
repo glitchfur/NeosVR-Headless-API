@@ -1,3 +1,19 @@
+# NeosVR-Headless-API
+# Copyright (C) 2022  GlitchFur
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 # This file contains format strings that describe how the output of the various
 # commands in the headless client should be parsed. If the NeosVR developers
 # change the format of any command's response, this file can be easily updated

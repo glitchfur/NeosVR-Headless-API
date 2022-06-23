@@ -1,5 +1,9 @@
 # Changelog
 
+## 2022-06-23
+
+* The project now uses the [GNU GPLv3](/LICENSE.txt) license.
+
 ## 2022-06-22
 
 * Add `rpyc` and `pdoc` packages to requirements.txt, for the RPC server and generating technical documentation respectively.

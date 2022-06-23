@@ -32,3 +32,5 @@ Out[4]:
 In [5]: hc.shutdown()
 Out[5]: 0
 ```
+
+This project uses the [GNU GPLv3](/LICENSE.txt) license.
