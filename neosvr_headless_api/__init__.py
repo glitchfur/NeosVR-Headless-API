@@ -456,6 +456,21 @@ class HeadlessClient:
         Raise `NeosError` if the world template name is invalid
         Raise `UnhandledError` for any unknown errors
         """
+        templates_name = [
+            "SpaceWorld",
+            "Basic Empty",
+            "GridSpace",
+            "Microworld",
+            "Testing Scaling",
+            "ScratchSpace",
+            "ScratchSpace (mobile)",
+        ]
+        if not world_template not in templates_name:
+            raise NeosError(
+                'Invalid preset name. Choose between: %s' % ', '.join(
+                    templates_name
+                )
+            )
         cmd = self.send_command('startWorldTemplate  "%s"' % (world_template))
         errors = ['Invalid preset name']
         for ln in cmd:
