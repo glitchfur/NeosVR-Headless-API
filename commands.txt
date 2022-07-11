@@ -32,6 +32,9 @@ status
 friendRequests
 	Lists all incoming friend requests
 	Usage: friendrequests
+startWorldURL
+	Start a new world from URL
+	Usage: startworldurl <record URL>
 sessionUrl
 	Prints the URL of the current session
 	Usage: sessionurl 
@@ -123,9 +126,6 @@ saveConfig
 acceptFriendRequest
 	Accepts a friend request
 	Usage: acceptfriendrequest <friend name>
-startWorldURL
-	Start a new world from URL
-	Usage: startworldurl <record URL>
 startWorldTemplate
 	Start a new world from template
 	Usage: startworldtemplate <template name>
