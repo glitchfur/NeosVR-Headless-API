@@ -447,14 +447,23 @@ class HeadlessClient:
         """
         raise NotImplementedError("Not yet implemented")
 
-    # TODO: Implement `startWorldTemplate` here
-    def start_world_template(self, *args, **kwargs):
+    def start_world_template(self, world_template: str):
         """
-        Not yet implemented
+        Start a wolrd based on a given world template name
 
-        Raises `NotImplementedError`
+        Return nothing on success
+
+        Raise `NeosError` if the world template name is invalid
+        Raise `UnhandledError` for any unknown errors
         """
-        raise NotImplementedError("Not yet implemented")
+        cmd = self.send_command('startWorldTemplate  "%s"' % (world_template))
+        errors = ['Invalid preset name']
+        for ln in cmd:
+            if ln == "World running...":
+                return
+            elif ln in errors:
+                raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     def status(self, world: Union[str, int] = None) -> dict:
         """
