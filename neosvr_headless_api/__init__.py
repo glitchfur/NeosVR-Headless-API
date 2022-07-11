@@ -21,13 +21,14 @@ and the [wiki](https://github.com/glitchfur/NeosVR-Headless-API/wiki) can help y
 get started in the right direction.
 """
 
+from __future__ import annotations
+from typing import Union
+
 from threading import Thread, Event
 from queue import Queue, Empty
 from subprocess import Popen, PIPE
 from concurrent.futures import ThreadPoolExecutor
 from os import path
-
-from typing import Union
 
 from parse import parse, findall
 
