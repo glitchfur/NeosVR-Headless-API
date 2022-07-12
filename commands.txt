@@ -32,6 +32,9 @@ status
 friendRequests
 	Lists all incoming friend requests
 	Usage: friendrequests
+acceptFriendRequest
+	Accepts a friend request
+	Usage: acceptfriendrequest <friend name>
 sessionUrl
 	Prints the URL of the current session
 	Usage: sessionurl 
@@ -120,9 +123,6 @@ NOT IMPLEMENTED
 saveConfig
 	Saves the current settings into the original config file
 	Usage: saveconfig <filename> (optional, will save in place without)
-acceptFriendRequest
-	Accepts a friend request
-	Usage: acceptfriendrequest <friend name>
 startWorldURL
 	Start a new world from URL
 	Usage: startworldurl <record URL>
