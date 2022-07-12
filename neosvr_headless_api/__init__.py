@@ -374,14 +374,13 @@ class HeadlessClient:
                 raise NeosError(ln)
         raise UnhandledError("\n".join(cmd))
 
-    # TODO: Implement `friendRequests` here
-    def friend_requests(self, *args, **kwargs):
+    def friend_requests(self) -> List[str]:
         """
-        Not yet implemented
+        List current friend requests
 
-        Raises `NotImplementedError`
+        Return the list of the user who have send a friend request
         """
-        raise NotImplementedError("Not yet implemented")
+        return self.send_command('friendRequests')
 
     # TODO: Implement `acceptFriendRequest` here
     def accept_friend_request(self, *args, **kwargs):
