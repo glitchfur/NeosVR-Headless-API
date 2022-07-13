@@ -1,6 +1,6 @@
 # NeosVR-Headless-API
 
-**NeosVR-Headless-API** is a Python wrapper and API for the NeosVR headless client. With it, you can programmatically control headless clients both locally and remotely.
+**NeosVR-Headless-API** is a Python wrapper and API for the NeosVR [headless client](https://wiki.neos.com/Headless_Client). With it, you can programmatically control headless clients both locally and remotely.
 
 It aims to be easy to use by doing the heavy work of parsing command output for you and turns it into Python objects that you can use any way you like.
 
