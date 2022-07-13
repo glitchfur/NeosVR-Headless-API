@@ -1,0 +1,24 @@
+version: "3"
+services:
+  neosvr-headless-api:
+    image: ghcr.io/glitchfur/neosvr-headless-api
+    container_name: neosvr-headless-api
+    tty: true
+    stdin_open: true
+    environment:
+      STEAMBETA: CHANGEME
+      STEAMBETAPASSWORD: CHANGEME
+      STEAMLOGIN: "USER PASSWORD"
+    volumes:
+      - "./Config:/Config:ro"
+      - "./Logs:/Logs"
+      - "/etc/localtime:/etc/localtime:ro"
+    ports:
+      - 16881:16881
+    restart: unless-stopped
+    command: ["--host", "0.0.0.0"]
+    # If you are having issues starting the headless client, comment out the line
+    # above and uncomment the two lines below to start the headless client with
+    # no RPC server, so you'll be able to see the console and catch errors.
+    # entrypoint: ["/Scripts/setup_neosvr.sh"]
+    # command: ["/Scripts/start_neosvr.sh"]
