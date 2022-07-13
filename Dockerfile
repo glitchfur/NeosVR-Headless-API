@@ -13,4 +13,6 @@ ENV PATH=$PATH:/home/steam/.local/bin
 COPY --chown=$USER:$USER . /home/steam/NeosVR-Headless-API
 RUN ["pip3", "install", "-r", "/home/steam/NeosVR-Headless-API/requirements.txt"]
 
+EXPOSE 16881
+
 ENTRYPOINT ["/Scripts/setup_neosvr.sh", "/home/steam/NeosVR-Headless-API/rpc_server.py"]
