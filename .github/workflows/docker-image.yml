@@ -22,4 +22,4 @@ jobs:
         uses: docker/build-push-action@v3.0.0
         with:
           push: true
-          tags: ghcr.io/${{ github.repository }}:latest
+          tags: ghcr.io/glitchfur/neosvr-headless-api:latest
