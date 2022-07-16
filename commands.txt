@@ -29,6 +29,9 @@ focus
 status
 	Shows the status of the current world
 	Usage: status 
+startWorldTemplate
+	Start a new world from template
+	Usage: startworldtemplate <template name>
 sessionUrl
 	Prints the URL of the current session
 	Usage: sessionurl 
@@ -126,9 +129,6 @@ acceptFriendRequest
 startWorldURL
 	Start a new world from URL
 	Usage: startworldurl <record URL>
-startWorldTemplate
-	Start a new world from template
-	Usage: startworldtemplate <template name>
 import
 	Import an asset into the focused world
 	Usage: import <file path or URL>
