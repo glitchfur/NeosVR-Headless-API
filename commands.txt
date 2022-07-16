@@ -29,6 +29,9 @@ focus
 status
 	Shows the status of the current world
 	Usage: status 
+acceptFriendRequest
+	Accepts a friend request
+	Usage: acceptfriendrequest <friend name>
 sessionUrl
 	Prints the URL of the current session
 	Usage: sessionurl 
@@ -120,9 +123,6 @@ saveConfig
 friendRequests
 	Lists all incoming friend requests
 	Usage: friendrequests 
-acceptFriendRequest
-	Accepts a friend request
-	Usage: acceptfriendrequest <friend name>
 startWorldURL
 	Start a new world from URL
 	Usage: startworldurl <record URL>
