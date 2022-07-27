@@ -15,7 +15,6 @@ services:
       - "/etc/localtime:/etc/localtime:ro"
     ports:
       - 16881:16881
-    restart: unless-stopped
     command: ["--host", "0.0.0.0"]
     # If you are having issues starting the headless client, comment out the line
     # above and uncomment the two lines below to start the headless client with
