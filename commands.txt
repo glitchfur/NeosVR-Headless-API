@@ -20,6 +20,12 @@ message
 invite
 	Invite a friend to the currently focused world
 	Usage: invite <friend name>
+friendRequests
+	Lists all incoming friend requests
+	Usage: friendrequests
+acceptFriendRequest
+	Accepts a friend request
+	Usage: acceptfriendrequest <friend name>
 worlds
 	Lists all active worlds
 	Usage: worlds 
@@ -29,12 +35,9 @@ focus
 status
 	Shows the status of the current world
 	Usage: status 
-friendRequests
-	Lists all incoming friend requests
-	Usage: friendrequests
-acceptFriendRequest
-	Accepts a friend request
-	Usage: acceptfriendrequest <friend name>
+startWorldURL
+	Start a new world from URL
+	Usage: startworldurl <record URL>
 sessionUrl
 	Prints the URL of the current session
 	Usage: sessionurl 
@@ -123,9 +126,6 @@ NOT IMPLEMENTED
 saveConfig
 	Saves the current settings into the original config file
 	Usage: saveconfig <filename> (optional, will save in place without)
-startWorldURL
-	Start a new world from URL
-	Usage: startworldurl <record URL>
 startWorldTemplate
 	Start a new world from template
 	Usage: startworldtemplate <template name>

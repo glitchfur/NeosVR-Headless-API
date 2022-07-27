@@ -450,14 +450,26 @@ class HeadlessClient:
             if ln in errors:
                 raise NeosError(ln)
 
-    # TODO: Implement `startWorldURL` here
-    def start_world_url(self, *args, **kwargs):
+    def start_world_url(self, world_url: str):
         """
-        Not yet implemented
+        Start a world based on a neos record url
 
-        Raises `NotImplementedError`
+        Return nothing on success
+
+        Raise `NeosError` if the neos record format is invalid
+        Raise `NeosError` if the world cannot be started
+        Raise `UnhandledError` for any unknown errors
         """
-        raise NotImplementedError("Not yet implemented")
+        if not world_url.startswith('neosrec://'):
+            raise NeosError('Invalid neos record format')
+        cmd = self.send_command('startWorldURL  "%s"' % (world_url))
+        if "World running..." in cmd:
+            return
+        elif len(cmd) == 1 and "Resolving SessionID: " in cmd:
+            return NeosError(
+                "Can't resolve world url. Not enough permissions?"
+            )
+        raise UnhandledError("\n".join(cmd))
 
     # TODO: Implement `startWorldTemplate` here
     def start_world_template(self, *args, **kwargs):
