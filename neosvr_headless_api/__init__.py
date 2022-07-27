@@ -392,7 +392,10 @@ class HeadlessClient:
         Raise `UnhandledError` for any unkown error
         """
         cmd = self.send_command('acceptFriendRequest %s' % username)
-        errors = ["There's no friend request from this user"]
+        errors = [
+            "There's no friend request from this user",
+            "No friend with this username",
+        ]
         for ln in cmd:
             if ln == 'Request accepted!':
                 return
