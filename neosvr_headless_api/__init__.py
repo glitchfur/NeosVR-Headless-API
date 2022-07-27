@@ -382,14 +382,26 @@ class HeadlessClient:
         """
         return self.send_command('friendRequests')
 
-    # TODO: Implement `acceptFriendRequest` here
-    def accept_friend_request(self, *args, **kwargs):
+    def accept_friend_request(self, username: str):
         """
-        Not yet implemented
+        Accept the friend request of the user
 
-        Raises `NotImplementedError`
+        Return none if the friend request has been proceed by the headless
+
+        Raise `NeosError` if no friend request has been found from this user
+        Raise `UnhandledError` for any unkown error
         """
-        raise NotImplementedError("Not yet implemented")
+        cmd = self.send_command('acceptFriendRequest %s' % username)
+        errors = [
+            "There's no friend request from this user",
+            "No friend with this username",
+        ]
+        for ln in cmd:
+            if ln == 'Request accepted!':
+                return
+            elif ln in errors:
+                raise NeosError(ln)
+        raise UnhandledError("\n".join(cmd))
 
     def worlds(self) -> list[dict]:
         """
